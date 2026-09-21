@@ -1,0 +1,46 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="342" height="200" viewBox="0 0 342 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Concept interior illustration" clip-path="url(#clip0_0_6)">
+<path id="Vector" d="M342 0H0V200H342V0Z" fill="#EDE4D7"/>
+<path id="Vector_2" d="M0 150H342V200H0V150Z" fill="#D5C4AB"/>
+<path id="Vector_3" d="M18 20H97V132H18V20Z" fill="#BDCDC3"/>
+<g id="Vector_4">
+<path d="M57 20V132ZM18 77H97Z" fill="black"/>
+<path d="M57 20V132M18 77H97" stroke="#F8F6F2" stroke-width="6"/>
+</g>
+<path id="Vector_5" d="M174 23H120V87H174V23Z" fill="#C0A681"/>
+<path id="Vector_6" d="M166 31H128V79H166V31Z" fill="#F5F0E7"/>
+<path id="Vector_7" d="M139 67L151 41L160 67" fill="#658474"/>
+<path id="Vector_8" d="M173 194C231.542 194 279 186.837 279 178C279 169.163 231.542 162 173 162C114.458 162 67 169.163 67 178C67 186.837 114.458 194 173 194Z" fill="#BDAE98"/>
+<path id="Vector_9" d="M247 121H80C74.4772 121 70 125.477 70 131V154C70 159.523 74.4772 164 80 164H247C252.523 164 257 159.523 257 154V131C257 125.477 252.523 121 247 121Z" fill="#9AAB93"/>
+<path id="Vector_10" d="M234 94H94C86.8203 94 81 99.8203 81 107V133C81 140.18 86.8203 146 94 146H234C241.18 146 247 140.18 247 133V107C247 99.8203 241.18 94 234 94Z" fill="#AFBCA7"/>
+<g id="Vector_11">
+<path d="M163 98V141Z" fill="black"/>
+<path d="M163 98V141" stroke="#91A18A" stroke-width="2"/>
+</g>
+<path id="Vector_12" d="M119 102H96C93.2386 102 91 104.239 91 107V125C91 127.761 93.2386 130 96 130H119C121.761 130 124 127.761 124 125V107C124 104.239 121.761 102 119 102Z" fill="#DDD3BF"/>
+<path id="Vector_13" d="M232 105H215C212.791 105 211 106.791 211 109V128C211 130.209 212.791 132 215 132H232C234.209 132 236 130.209 236 128V109C236 106.791 234.209 105 232 105Z" fill="#5B7966"/>
+<g id="Vector_14">
+<path d="M83 162V177ZM244 161V176Z" fill="black"/>
+<path d="M83 162V177M244 161V176" stroke="#67533F" stroke-width="6"/>
+</g>
+<path id="Vector_15" d="M173 175C196.748 175 216 170.523 216 165C216 159.477 196.748 155 173 155C149.252 155 130 159.477 130 165C130 170.523 149.252 175 173 175Z" fill="#765F45"/>
+<g id="Vector_16">
+<path d="M146 169V186ZM199 169V186Z" fill="black"/>
+<path d="M146 169V186M199 169V186" stroke="#765F45" stroke-width="4"/>
+</g>
+<g id="Vector_17">
+<path d="M290 68V154Z" fill="black"/>
+<path d="M290 68V154" stroke="#826B4E" stroke-width="4"/>
+</g>
+<path id="Vector_18" d="M264 77H317L303 41H277L264 77Z" fill="#FAF7EF"/>
+<g id="Vector_19">
+<path d="M279 156H303Z" fill="black"/>
+<path d="M279 156H303" stroke="#826B4E" stroke-width="5"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_6">
+<rect width="342" height="200" fill="white"/>
+</clipPath>
+</defs>
+</svg>
