@@ -7,4 +7,13 @@ abstract class EnquiryRepository {
     String? productId,
     String? accountId,
   });
+
+  Future<Result<ProductEnquiry>> getEnquiry(String enquiryId);
+
+  Future<Result<List<ProductEnquiry>>> listEnquiries({String? accountId});
+
+  Future<Result<ProductEnquiry>> updateStatus({
+    required String enquiryId,
+    required String status,
+  });
 }

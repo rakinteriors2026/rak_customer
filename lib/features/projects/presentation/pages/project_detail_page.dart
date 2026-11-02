@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rak_customer/core/di/injection.dart';
@@ -71,7 +72,16 @@ class _ProjectDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Project')),
+      appBar: AppBar(
+        title: const Text('Project'),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                icon: const Icon(CupertinoIcons.chevron_back),
+                onPressed: () => Navigator.of(context).maybePop(),
+              )
+            : null,
+      ),
       body: BlocBuilder<ProjectDetailCubit, ProjectDetailState>(
         builder: (context, state) {
           return switch (state) {

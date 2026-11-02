@@ -1,10 +1,15 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rak_customer/core/di/injection.dart';
+import 'package:rak_customer/core/navigation/auth_return.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
+import 'package:rak_customer/core/theme/app_text.dart';
+import 'package:rak_customer/shared/formatters/date_formatter.dart';
+import 'package:rak_customer/shared/widgets/fig_text.dart';
 import 'package:rak_customer/features/support/domain/entities/support_query.dart';
 import 'package:rak_customer/features/support/domain/usecases/create_support_query.dart';
 import 'package:rak_customer/features/support/domain/usecases/get_support_contexts.dart';
@@ -14,7 +19,6 @@ import 'package:rak_customer/features/support/presentation/cubit/support_list_cu
 import 'package:rak_customer/shared/widgets/app_error_state.dart';
 import 'package:rak_customer/shared/widgets/app_loading.dart';
 import 'package:rak_customer/shared/widgets/rak_button.dart';
-import 'package:rak_customer/shared/widgets/rak_info_card.dart';
 import 'package:rak_customer/shared/widgets/rak_page.dart';
 
 class SupportListPage extends StatelessWidget {
@@ -35,19 +39,26 @@ class SupportListPage extends StatelessWidget {
       return RakPage(
         title: 'How can we help?',
         subtitle: 'Your RAK consultant is here for you.',
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/account');
+          }
+        },
         child: ListView(
           padding: context.figPagePadding,
           children: [
-            Text(
-              'Sign in to raise a query about a project or order.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            const FigText(
+              'Sign in to ask about a project or an order.',
+              style: AppText.body,
+              color: AppColors.muted,
             ),
             const SizedBox(height: AppSpacing.md),
             RakButton(
               label: 'Sign in',
-              onPressed: () => context.push('/login'),
+              onPressed: () =>
+                  context.push(AuthReturn.loginLocation(from: '/support')),
             ),
           ],
         ),
@@ -116,46 +127,52 @@ class _SupportHubState extends State<_SupportHub> {
       child: RakPage(
         title: 'How can we help?',
         subtitle: 'Your RAK consultant is here for you.',
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/account');
+          }
+        },
         child: BlocBuilder<CreateQueryCubit, CreateQueryState>(
           builder: (context, formState) {
             return ListView(
               padding: context.figPagePadding,
               children: [
-                const RakInfoCard(
-                  title: 'Your sales consultant',
-                  detail: 'Priya · Project support',
+                const FigText('Priya', style: AppText.screenTitle),
+                SizedBox(height: context.s(2)),
+                const FigText(
+                  'Your consultant · Project support',
+                  style: AppText.caption,
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                SizedBox(height: context.s(20)),
+                const Divider(height: 1, color: AppColors.line),
+                SizedBox(height: context.s(20)),
                 ..._form(context, formState),
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: context.s(28)),
                 BlocBuilder<SupportListCubit, SupportListState>(
                   builder: (context, state) {
-                    return switch (state) {
-                      SupportListLoaded(:final queries) => Column(
-                        children: [
-                          for (final query in queries)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppSpacing.md,
-                              ),
-                              child: RakInfoCard(
-                                title:
-                                    'Previous query · ${query.status}',
-                                detail:
-                                    '${query.id} · ${query.subject}',
-                                onTap: () =>
-                                    context.push('/support/${query.id}'),
-                              ),
-                            ),
+                    if (state is! SupportListLoaded || state.queries.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const FigText('Earlier questions', style: AppText.caption),
+                        SizedBox(height: context.s(8)),
+                        const Divider(height: 1, color: AppColors.line),
+                        for (final query in state.queries) ...[
+                          _QuietLink(
+                            title: query.subject,
+                            detail:
+                                '${query.statusLabel} · ${DateFormatter.displayShort(query.createdAt)}',
+                            onTap: () => context.push('/support/${query.id}'),
+                          ),
+                          const Divider(height: 1, color: AppColors.line),
                         ],
-                      ),
-                      _ => const SizedBox.shrink(),
-                    };
+                      ],
+                    );
                   },
-                ),
-                Text(
-                  'Your question will be routed to the assigned consultant.',
-                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             );
@@ -178,69 +195,79 @@ class _SupportHubState extends State<_SupportHub> {
       ];
     }
     if (state is CreateQueryNoContext) {
-      return [
-        Text(
-          'Support queries are linked to a project or an order.',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+      return const [
+        FigText(
+          'A question needs a project or an order.',
+          style: AppText.body,
+          color: AppColors.muted,
         ),
       ];
     }
     if (state is! CreateQueryReady) return const [];
     final submitting = state.submitting;
+    final fieldStyle = AppText.body.fig(context);
     return [
-      Text('Related to', style: Theme.of(context).textTheme.bodySmall),
-      const SizedBox(height: AppSpacing.xs),
-      InputDecorator(
-        decoration: const InputDecoration(),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<SupportContextOption>(
-            isExpanded: true,
-            value: state.selected,
-            items: [
-              for (final option in state.contexts.options)
-                DropdownMenuItem(
-                  value: option,
-                  child: Text(option.label),
-                ),
-            ],
-            onChanged: submitting
-                ? null
-                : (option) {
-                    if (option != null) {
-                      context.read<CreateQueryCubit>().select(option);
-                    }
-                  },
+      const FigText('Related to', style: AppText.caption),
+      DropdownButtonHideUnderline(
+        child: DropdownButton<SupportContextOption>(
+          isExpanded: true,
+          isDense: true,
+          value: state.selected,
+          style: fieldStyle.copyWith(color: AppColors.ink),
+          icon: Icon(
+            CupertinoIcons.chevron_down,
+            size: context.s(14),
+            color: AppColors.muted,
           ),
+          items: [
+            for (final option in state.contexts.options)
+              DropdownMenuItem(
+                value: option,
+                child: Text(option.label),
+              ),
+          ],
+          onChanged: submitting
+              ? null
+              : (option) {
+                  if (option != null) {
+                    context.read<CreateQueryCubit>().select(option);
+                  }
+                },
         ),
       ),
-      const SizedBox(height: AppSpacing.sm),
-      Text('Subject', style: Theme.of(context).textTheme.bodySmall),
-      const SizedBox(height: AppSpacing.xs),
+      const Divider(height: 1, color: AppColors.line),
+      SizedBox(height: context.s(18)),
+      const FigText('Subject', style: AppText.caption),
       TextField(
         controller: _subject,
         enabled: !submitting,
-        decoration: const InputDecoration(hintText: 'Kitchen installation'),
+        style: fieldStyle,
+        cursorColor: AppColors.ink,
+        decoration: _line(context, hint: 'Kitchen installation'),
       ),
-      const SizedBox(height: AppSpacing.sm),
+      SizedBox(height: context.s(18)),
+      const FigText('Question', style: AppText.caption),
       TextField(
         controller: _message,
         enabled: !submitting,
-        minLines: 1,
-        maxLines: 4,
-        decoration: const InputDecoration(
-          hintText: 'When will the countertop installation begin?',
+        minLines: 2,
+        maxLines: 5,
+        style: fieldStyle,
+        cursorColor: AppColors.ink,
+        decoration: _line(
+          context,
+          hint: 'When will the countertop installation begin?',
         ),
       ),
       if (state.errorMessage != null) ...[
-        const SizedBox(height: AppSpacing.sm),
-        Text(
+        SizedBox(height: context.s(12)),
+        FigText(
           state.errorMessage!,
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
+          style: AppText.caption,
+          color: AppColors.error,
         ),
       ],
-      const SizedBox(height: AppSpacing.sm),
+      SizedBox(height: context.s(24)),
       RakButton(
         label: submitting ? 'Sending…' : 'Send question',
         loading: submitting,
@@ -252,5 +279,66 @@ class _SupportHubState extends State<_SupportHub> {
               ),
       ),
     ];
+  }
+}
+
+InputDecoration _line(BuildContext context, {required String hint}) {
+  const idle = UnderlineInputBorder(
+    borderSide: BorderSide(color: AppColors.line),
+  );
+  const focus = UnderlineInputBorder(
+    borderSide: BorderSide(color: AppColors.ink),
+  );
+  return InputDecoration(
+    filled: false,
+    isDense: true,
+    hintText: hint,
+    hintStyle: AppText.body.fig(context).copyWith(color: AppColors.muted),
+    contentPadding: EdgeInsets.symmetric(vertical: context.s(12)),
+    border: idle,
+    enabledBorder: idle,
+    focusedBorder: focus,
+    disabledBorder: idle,
+  );
+}
+
+class _QuietLink extends StatelessWidget {
+  const _QuietLink({
+    required this.title,
+    required this.detail,
+    required this.onTap,
+  });
+
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.s(16)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FigText(title, style: AppText.label),
+                  SizedBox(height: context.s(2)),
+                  FigText(detail, style: AppText.caption),
+                ],
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: context.s(14),
+              color: AppColors.muted,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

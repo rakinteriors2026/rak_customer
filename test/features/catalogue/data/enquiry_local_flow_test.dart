@@ -34,6 +34,14 @@ void main() {
     expect(result.isSuccess, isTrue);
     expect(result.valueOrNull?.message, 'Please quote a 3m oak table.');
     expect(result.valueOrNull?.productId, 'prod_oak_table');
+    expect(result.valueOrNull?.status, 'submitted');
+
+    final updated = await repository.updateStatus(
+      enquiryId: result.valueOrNull!.id,
+      status: 'contacted',
+    );
+    expect(updated.valueOrNull?.statusLabel, 'Consultant contacted');
+    expect(updated.valueOrNull?.consultantNote, isNotNull);
   });
 
   test('rejects an empty enquiry', () async {

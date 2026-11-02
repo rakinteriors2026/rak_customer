@@ -52,6 +52,8 @@
 			<string>tel</string>
 			<string>mailto</string>
 		</array>
+		<key>NSCameraUsageDescription</key>
+		<string>RAK uses the camera so you can place a product in your room.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

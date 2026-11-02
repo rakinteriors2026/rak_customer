@@ -21,4 +21,10 @@ abstract class CheckoutRepository {
   });
 
   Future<Result<List<ShopOrder>>> listOrders({required String accountId});
+
+  Future<Result<ShopOrder>> updateStatus({
+    required String accountId,
+    required String orderId,
+    required String status,
+  });
 }

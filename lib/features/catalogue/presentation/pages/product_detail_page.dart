@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,9 +6,7 @@ import 'package:rak_customer/core/di/injection.dart';
 import 'package:rak_customer/core/domain/entities/money.dart';
 import 'package:rak_customer/core/domain/entities/shop_branch.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
-import 'package:rak_customer/core/theme/app_layout.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
-import 'package:rak_customer/core/theme/app_spacing.dart';
 import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/features/catalogue/domain/entities/catalogue_product.dart';
 import 'package:rak_customer/features/catalogue/presentation/cubit/product_detail_cubit.dart';
@@ -20,8 +19,6 @@ import 'package:rak_customer/shared/widgets/fig_text.dart';
 import 'package:rak_customer/shared/widgets/product_artwork.dart';
 import 'package:rak_customer/shared/widgets/rak_button.dart';
 import 'package:rak_customer/shared/widgets/rak_page.dart';
-import 'package:rak_customer/shared/widgets/rak_purchase_bar.dart';
-import 'package:rak_customer/shared/widgets/rak_status_banner.dart';
 
 typedef ProductAction = Future<String> Function(CatalogueProduct product);
 
@@ -151,73 +148,42 @@ class _LoadedDetail extends StatelessWidget {
         final available = snapshot.data?.valueOrNull ?? true;
         final canBuy = product.canAddToCart && available;
         final unavailableHere = product.canAddToCart && !available;
+        final lead = switch (product.salesMode) {
+          SalesMode.madeToOrder =>
+            'About 6–8 weeks. Delivery charge confirmed at checkout.',
+          SalesMode.quotationOnly =>
+            'Quoted separately. This piece is not added to the cart.',
+          SalesMode.fixedPrice =>
+            'About 5–7 working days. Delivery charge confirmed at checkout.',
+        };
+        final status = unavailableHere
+            ? 'Unavailable here'
+            : switch (product.salesMode) {
+                SalesMode.madeToOrder => 'Made to order',
+                SalesMode.quotationOnly => 'Quote only',
+                SalesMode.fixedPrice => 'In stock',
+              };
+        final specs = product.specs
+            .split('·')
+            .map((part) => part.trim())
+            .where((part) => part.isNotEmpty)
+            .map((part) => part[0].toUpperCase() + part.substring(1))
+            .toList();
         return RakPage(
           title: product.name,
-          subtitle: 'Branch: ${branch.label}',
+          subtitle: '${branch.name} · ${branch.area}',
           onBack: () => context.pop(),
-          bottomBar: RakPurchaseBar(
-            summary: unavailableHere
-                ? 'Unavailable at this branch'
-                : product.canAddToCart
-                ? '$_priceLabel · 1 item'
-                : 'Made for your space',
-            actionLabel: unavailableHere
-                ? 'Choose another branch'
-                : product.canAddToCart
-                ? 'Add to cart'
-                : 'Request a quote',
-            loading: busy,
-            onAction: () async {
-              if (unavailableHere) {
-                context.push('/shop/unavailable');
-                return;
-              }
-              if (canBuy) {
-                final notice = await onAddToCart(product);
-                if (context.mounted) {
-                  context.read<ProductDetailCubit>().showNotice(notice);
-                }
-              } else {
-                context.push('/enquiry?productId=${product.id}');
-              }
-            },
-          ),
           child: ListView(
             padding: context.figPagePadding,
             children: [
-              ProductArtwork(
-                imageHint: product.imageHint,
-                width: double.infinity,
-                height: context.s(AppLayout.heroProductHeight),
-              ),
-              SizedBox(height: context.s(8)),
-              RakButton(
-                label: 'Visualise · 360°, AI room & AR',
-                style: RakButtonStyle.secondary,
-                onPressed: () => context.push(
-                  '/shop/products/${product.id}/visualise',
-                  extra: product.name,
-                ),
-              ),
-              SizedBox(height: context.s(8)),
+              _ProductPhoto(imageHint: product.imageHint),
+              SizedBox(height: context.s(20)),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Expanded(child: FigText(_priceLabel, style: AppText.heading)),
-                  SizedBox(
-                    width: context.s(100),
-                    child: FigText(
-                      unavailableHere
-                          ? 'Unavailable here'
-                          : product.canAddToCart
-                          ? 'In stock'
-                          : 'Quote only',
-                      style: AppText.caption,
-                      color: product.canAddToCart && !unavailableHere
-                          ? AppColors.success
-                          : AppColors.muted,
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
+                  Expanded(child: FigText(_priceLabel, style: AppText.display)),
+                  SizedBox(width: context.s(12)),
+                  FigText(status, style: AppText.caption),
                 ],
               ),
               SizedBox(height: context.s(8)),
@@ -226,31 +192,173 @@ class _LoadedDetail extends StatelessWidget {
                 style: AppText.body,
                 color: AppColors.muted,
               ),
-              SizedBox(height: context.s(8)),
-              RakStatusBanner(text: product.specs),
-              SizedBox(height: context.s(8)),
-              FigText('Delivery postcode', style: AppText.caption),
-              SizedBox(height: context.s(8)),
-              const TextField(
-                decoration: InputDecoration(
-                  hintText: '680121   ·   Delivery available',
+              SizedBox(height: context.s(20)),
+              const Divider(height: 1, color: AppColors.line),
+              for (final spec in specs) ...[
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: context.s(14)),
+                  child: FigText(spec, style: AppText.label),
+                ),
+                const Divider(height: 1, color: AppColors.line),
+              ],
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: context.s(14)),
+                child: FigText(lead, style: AppText.caption),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              _QuietLink(
+                icon: CupertinoIcons.viewfinder,
+                title: 'View in your room',
+                detail: 'Place it, then walk around to see every side',
+                onTap: () => context.push(
+                  '/shop/products/${product.id}/ar?hint=${product.imageHint}&specs=${Uri.encodeComponent(product.specs)}',
+                  extra: product.name,
                 ),
               ),
-              SizedBox(height: context.s(8)),
-              FigText(
-                'Estimated delivery: 5–7 working days.\nDelivery charge confirmed at checkout.',
-                style: AppText.caption,
+              const Divider(height: 1, color: AppColors.line),
+              _QuietLink(
+                icon: CupertinoIcons.cube,
+                title: 'Visualise',
+                detail: '360°, AI room and AR',
+                onTap: () => context.push(
+                  '/shop/products/${product.id}/visualise?hint=${product.imageHint}&specs=${Uri.encodeComponent(product.specs)}',
+                  extra: product.name,
+                ),
               ),
-              const SizedBox(height: AppSpacing.md),
+              const Divider(height: 1, color: AppColors.line),
+              _QuietLink(
+                icon: CupertinoIcons.heart,
+                title: 'Saved pieces',
+                detail: 'Pieces you kept',
+                onTap: () => context.push('/favourites'),
+              ),
+              if (canBuy) ...[
+                const Divider(height: 1, color: AppColors.line),
+                _QuietLink(
+                  icon: CupertinoIcons.cart,
+                  title: 'Add to cart',
+                  detail: 'Keep this piece in your cart',
+                  onTap: busy
+                      ? () {}
+                      : () async {
+                          final notice = await onAddToCart(product);
+                          if (context.mounted) {
+                            context.read<ProductDetailCubit>().showNotice(
+                              notice,
+                            );
+                          }
+                        },
+                ),
+              ],
+              SizedBox(height: context.s(20)),
               RakButton(
-                label: 'View saved products',
-                style: RakButtonStyle.secondary,
-                onPressed: () => context.push('/favourites'),
+                label: unavailableHere
+                    ? 'Choose another branch'
+                    : product.canAddToCart
+                    ? 'Get now'
+                    : 'Request a quote',
+                loading: busy,
+                onPressed: busy
+                    ? null
+                    : () async {
+                        if (unavailableHere) {
+                          context.push('/shop/unavailable');
+                          return;
+                        }
+                        if (canBuy) {
+                          final notice = await onAddToCart(product);
+                          if (!context.mounted) return;
+                          if (notice == 'Added to cart') {
+                            context.push('/checkout');
+                            return;
+                          }
+                          context.read<ProductDetailCubit>().showNotice(
+                            notice,
+                          );
+                        } else {
+                          context.push('/enquiry?productId=${product.id}');
+                        }
+                      },
               ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _ProductPhoto extends StatelessWidget {
+  const _ProductPhoto({required this.imageHint});
+
+  final String imageHint;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = ProductArtwork.assetFor(imageHint);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(context.s(12)),
+      child: ColoredBox(
+        color: AppColors.sand,
+        child: SizedBox(
+          height: context.s(280),
+          width: double.infinity,
+          child: Padding(
+            padding: EdgeInsets.all(context.s(28)),
+            child: Image.asset(
+              asset,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuietLink extends StatelessWidget {
+  const _QuietLink({
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.s(16)),
+        child: Row(
+          children: [
+            Icon(icon, size: context.s(18), color: AppColors.ink),
+            SizedBox(width: context.s(14)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FigText(title, style: AppText.label),
+                  SizedBox(height: context.s(2)),
+                  FigText(detail, style: AppText.caption),
+                ],
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: context.s(14),
+              color: AppColors.muted,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

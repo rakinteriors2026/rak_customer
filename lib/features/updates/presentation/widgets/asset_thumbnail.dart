@@ -66,11 +66,10 @@ class _AssetThumbnailState extends State<AssetThumbnail> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surfaceMuted,
+      color: AppColors.sand,
       child: InkWell(
         onTap: _withdrawn ? null : _open,
-        child: AspectRatio(
-          aspectRatio: 1,
+        child: SizedBox.expand(
           child: _loading
               ? const Center(
                   child: SizedBox(
@@ -81,7 +80,7 @@ class _AssetThumbnailState extends State<AssetThumbnail> {
                 )
               : _withdrawn
               ? const WithdrawnPhotoPlaceholder(compact: true)
-              : SitePhoto(access: _access!, compact: true),
+              : SitePhoto(access: _access!),
         ),
       ),
     );

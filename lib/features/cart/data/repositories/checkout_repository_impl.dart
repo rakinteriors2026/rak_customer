@@ -75,6 +75,27 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
   }
 
   @override
+  Future<Result<ShopOrder>> updateStatus({
+    required String accountId,
+    required String orderId,
+    required String status,
+  }) async {
+    try {
+      return Success(
+        await _datasource.updateStatus(
+          accountId: accountId,
+          orderId: orderId,
+          status: status,
+        ),
+      );
+    } on Failure catch (failure) {
+      return Err(failure);
+    } catch (_) {
+      return const Err(UnknownFailure());
+    }
+  }
+
+  @override
   Future<Result<List<ShopOrder>>> listOrders({
     required String accountId,
   }) async {

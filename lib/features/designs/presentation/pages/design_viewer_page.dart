@@ -4,6 +4,7 @@ import 'package:rak_customer/core/domain/entities/asset_access.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
 import 'package:rak_customer/features/designs/domain/usecases/request_design_access.dart';
+import 'package:rak_customer/features/designs/presentation/design_preview.dart';
 import 'package:rak_customer/shared/widgets/app_loading.dart';
 import 'package:rak_customer/shared/widgets/rak_media_viewer_scaffold.dart';
 
@@ -73,15 +74,16 @@ class _DesignViewerPageState extends State<DesignViewerPage> {
           : Column(
               children: [
                 Expanded(
-                  child: ColoredBox(
-                    color: AppColors.surfaceMuted,
-                    child: Center(
-                      child: Icon(
-                        _iconFor(_access!.visualHint),
-                        size: 72,
-                        color: AppColors.primary.withValues(alpha: 0.75),
-                      ),
+                  child: Image.asset(
+                    designPreviewAsset(
+                      hint: _access!.visualHint,
+                      title: widget.title,
+                      assetId: widget.assetId,
                     ),
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const ColoredBox(color: AppColors.ink),
                   ),
                 ),
                 if (_access?.caption != null)
@@ -97,13 +99,5 @@ class _DesignViewerPageState extends State<DesignViewerPage> {
               ],
             ),
     );
-  }
-
-  IconData _iconFor(String hint) {
-    return switch (hint) {
-      'kitchen' => Icons.countertops_outlined,
-      'living' => Icons.weekend_outlined,
-      _ => Icons.chair_outlined,
-    };
   }
 }

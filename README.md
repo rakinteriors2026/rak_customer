@@ -1,16 +1,16 @@
-# rak_customer
+# RAK Interiors customer
 
-A new Flutter project.
+Flutter app for the RAK Interiors shop and for following an interior project: timeline, site photos, payments, documents, designs, and approvals.
 
-## Getting Started
+The shop works without an account. Projects, checkout, orders, and support need a signed-in phone number. This build stores everything on the device (SQLite). The demo OTP is `123456`.
 
-This project is a starting point for a Flutter application.
+Full walkthrough of screens, sign-in, data flow, and folder layout:
 
-A few resources to get you started if this is your first Flutter project:
+**[docs/HOW_THE_APP_WORKS.md](docs/HOW_THE_APP_WORKS.md)**
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Demo accounts: `+919876540001` (projects) and `+919876540002` (shop only).

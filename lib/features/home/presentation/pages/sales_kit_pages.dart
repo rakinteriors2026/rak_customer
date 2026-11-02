@@ -1,8 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
-import 'package:rak_customer/core/theme/app_spacing.dart';
 import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/shared/widgets/fig_text.dart';
 import 'package:rak_customer/shared/widgets/rak_button.dart';
@@ -28,64 +28,79 @@ class SalesKitPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return RakPage(
       title: 'The RAK sales kit',
-      subtitle: 'Explore our work and materials',
+      subtitle: 'Featured work',
       onBack: () => context.pop(),
-      bottomBar: _FixedAction(
-        child: RakButton(
-          label: 'Back to home',
-          style: RakButtonStyle.secondary,
-          onPressed: () => context.go('/home'),
-        ),
-      ),
       child: ListView(
         padding: context.figPagePadding,
         children: [
-          FigText('Spaces with a story.', style: AppText.heading),
-          const SizedBox(height: AppSpacing.sm),
-          FigText(
-            'A closer look at considered living.',
-            style: AppText.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          FigText(
-            'FEATURED PROJECT  /  01',
-            style: AppText.caption.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-              letterSpacing: 1.4,
-              color: AppColors.ink,
+          InkWell(
+            onTap: () => context.push('/sales-kit/story'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const RakPhoto(
+                  asset: 'assets/photos/courtyard_home.png',
+                  height: 220,
+                ),
+                SizedBox(height: context.s(12)),
+                const FigText('Featured project', style: AppText.caption),
+                SizedBox(height: context.s(4)),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: FigText(
+                        'The Courtyard Home',
+                        style: AppText.screenTitle,
+                      ),
+                    ),
+                    Icon(
+                      CupertinoIcons.chevron_right,
+                      size: context.s(14),
+                      color: AppColors.muted,
+                    ),
+                  ],
+                ),
+                SizedBox(height: context.s(2)),
+                const FigText(
+                  'Warm contemporary · living, kitchen and bedrooms',
+                  style: AppText.body,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          const RakPhoto(
-            asset: 'assets/photos/courtyard_home.png',
-            height: 160,
+          SizedBox(height: context.s(28)),
+          const FigText('In this project', style: AppText.caption),
+          SizedBox(height: context.s(8)),
+          InkWell(
+            onTap: () => context.push('/sales-kit/materials'),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: context.s(8)),
+              child: Row(
+                children: [
+                  const _Thumb(asset: 'assets/photos/oak_laminate.png'),
+                  SizedBox(width: context.s(14)),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FigText('Oak-look laminate', style: AppText.label),
+                        FigText(
+                          'Finish, care and how it is specified',
+                          style: AppText.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    CupertinoIcons.chevron_right,
+                    size: context.s(14),
+                    color: AppColors.muted,
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          FigText('The Courtyard Home', style: AppText.screenTitle),
-          const SizedBox(height: AppSpacing.xs),
-          FigText('Warm contemporary', style: AppText.caption),
-          const SizedBox(height: AppSpacing.sm),
-          RakButton(
-            label: 'Explore the project',
-            style: RakButtonStyle.secondary,
-            onPressed: () => context.push('/sales-kit/story'),
-          ),
-          const SizedBox(height: AppSpacing.md),
           const Divider(height: 1, color: AppColors.line),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Know your materials', style: AppText.title),
-          const SizedBox(height: AppSpacing.xs),
-          FigText(
-            'Finishes, applications and everyday care.',
-            style: AppText.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          RakButton(
-            label: 'Browse material details',
-            style: RakButtonStyle.secondary,
-            onPressed: () => context.push('/sales-kit/materials'),
-          ),
         ],
       ),
     );
@@ -117,45 +132,61 @@ class ProjectStoryPage extends StatelessWidget {
         children: [
           const RakPhoto(
             asset: 'assets/photos/courtyard_home.png',
-            height: 180,
+            height: 220,
           ),
-          const SizedBox(height: AppSpacing.md),
-          FigText('A warmer way to come home.', style: AppText.heading),
-          const SizedBox(height: AppSpacing.sm),
-          FigText(
+          SizedBox(height: context.s(16)),
+          const FigText(
+            'A warmer way to come home.',
+            style: AppText.heading,
+          ),
+          SizedBox(height: context.s(6)),
+          const FigText(
             'Natural tones, generous storage and space to breathe.',
-            style: AppText.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const _DetailRow(
-            label: 'Scope',
-            value: 'Living, kitchen & bedrooms',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const _DetailRow(label: 'Style', value: 'Warm contemporary'),
-          const SizedBox(height: AppSpacing.md),
-          const Divider(height: 1, color: AppColors.line),
-          const SizedBox(height: AppSpacing.md),
-          FigText('The design approach', style: AppText.title),
-          const SizedBox(height: AppSpacing.sm),
-          FigText(
-            'Storage follows the walls, leaving the centre open. Oak tones connect the living area with the kitchen.',
-            style: AppText.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Materials in this project', style: AppText.title),
-          const SizedBox(height: AppSpacing.sm),
-          RakButton(
-            label: 'Oak-look laminate · details',
-            style: RakButtonStyle.secondary,
-            onPressed: () => context.push('/sales-kit/materials'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
-            'Talk to the team about adapting this style to your space.',
             style: AppText.body,
-            color: AppColors.muted,
           ),
+          SizedBox(height: context.s(20)),
+          const _Spec(label: 'Scope', value: 'Living, kitchen and bedrooms'),
+          const Divider(height: 1, color: AppColors.line),
+          const _Spec(label: 'Style', value: 'Warm contemporary'),
+          const Divider(height: 1, color: AppColors.line),
+          SizedBox(height: context.s(22)),
+          const FigText('Approach', style: AppText.screenTitle),
+          SizedBox(height: context.s(6)),
+          const FigText(
+            'Storage follows the walls, leaving the centre open. Oak tones connect the living area with the kitchen.',
+            style: AppText.body,
+          ),
+          SizedBox(height: context.s(22)),
+          InkWell(
+            onTap: () => context.push('/sales-kit/materials'),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: context.s(8)),
+              child: Row(
+                children: [
+                  const _Thumb(asset: 'assets/photos/oak_laminate.png'),
+                  SizedBox(width: context.s(14)),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FigText('Oak-look laminate', style: AppText.label),
+                        FigText(
+                          'The finish used through this home',
+                          style: AppText.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    CupertinoIcons.chevron_right,
+                    size: context.s(14),
+                    color: AppColors.muted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.line),
         ],
       ),
     );
@@ -187,53 +218,42 @@ class MaterialDetailsPage extends StatelessWidget {
         children: [
           const RakPhoto(
             asset: 'assets/photos/oak_laminate.png',
-            height: 126,
-            radius: 0,
+            height: 200,
           ),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
+          SizedBox(height: context.s(16)),
+          const FigText(
             'A warm finish for everyday spaces.',
             style: AppText.screenTitle,
           ),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
-            'A decorative laminate surface with an oak-inspired grain. Confirm the final shade using a physical sample.',
-            style: AppText.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const _DetailRow(
-            label: 'Common applications',
-            value: 'Cabinetry & wall panels',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const _DetailRow(label: 'Appearance', value: 'Woodgrain · matte'),
-          const SizedBox(height: AppSpacing.sm),
-          const _DetailRow(
-            label: 'Selection',
-            value: 'Brand & grade confirmed in quote',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Divider(height: 1, color: AppColors.line),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Care & maintenance', style: AppText.title),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
-            'Use a soft, lightly damp cloth. Avoid abrasive cleaners and standing water. Follow the selected manufacturer’s care guide.',
-            style: AppText.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Specifications & warranty', style: AppText.title),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
-            'Thickness, substrate, certification and warranty depend on the selected product. Ask your consultant for the matching datasheet.',
+          SizedBox(height: context.s(6)),
+          const FigText(
+            'An oak-inspired grain. Confirm the final shade with a physical sample.',
             style: AppText.body,
-            color: AppColors.muted,
           ),
-          const SizedBox(height: AppSpacing.md),
-          RakButton(
-            label: 'Back to sales kit',
-            style: RakButtonStyle.secondary,
-            onPressed: () => context.go('/sales-kit'),
+          SizedBox(height: context.s(20)),
+          const _Spec(
+            label: 'Used for',
+            value: 'Cabinetry and wall panels',
+          ),
+          const Divider(height: 1, color: AppColors.line),
+          const _Spec(label: 'Appearance', value: 'Woodgrain, matte'),
+          const Divider(height: 1, color: AppColors.line),
+          const _Spec(
+            label: 'Selection',
+            value: 'Brand and grade are confirmed in the quote',
+          ),
+          const Divider(height: 1, color: AppColors.line),
+          SizedBox(height: context.s(22)),
+          const FigText('Care', style: AppText.screenTitle),
+          SizedBox(height: context.s(6)),
+          const FigText(
+            'Use a soft, lightly damp cloth. Avoid abrasive cleaners and standing water. Follow the selected manufacturer’s care guide.',
+            style: AppText.body,
+          ),
+          SizedBox(height: context.s(18)),
+          const FigText(
+            'Thickness, certification and warranty depend on the product chosen. Ask your consultant for the datasheet.',
+            style: AppText.caption,
           ),
         ],
       ),
@@ -241,29 +261,44 @@ class MaterialDetailsPage extends StatelessWidget {
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
+class _Spec extends StatelessWidget {
+  const _Spec({required this.label, required this.value});
 
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: FigText(label, style: AppText.body, color: AppColors.muted),
-        ),
-        SizedBox(width: context.s(12)),
-        Expanded(
-          child: FigText(
-            value,
-            style: AppText.label,
-            textAlign: TextAlign.right,
-          ),
-        ),
-      ],
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: context.s(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FigText(label, style: AppText.caption),
+          SizedBox(height: context.s(2)),
+          FigText(value, style: AppText.label),
+        ],
+      ),
+    );
+  }
+}
+
+class _Thumb extends StatelessWidget {
+  const _Thumb({required this.asset});
+
+  final String asset;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = context.s(64);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(context.s(12)),
+      child: Image.asset(
+        asset,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+      ),
     );
   }
 }
@@ -275,11 +310,22 @@ class _FixedAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.canvas,
+        border: Border(top: BorderSide(color: AppColors.line)),
+      ),
       child: SafeArea(
         top: false,
-        child: Padding(padding: EdgeInsets.all(context.s(16)), child: child),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            context.s(24),
+            context.s(12),
+            context.s(24),
+            context.s(8),
+          ),
+          child: child,
+        ),
       ),
     );
   }

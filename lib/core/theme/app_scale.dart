@@ -36,24 +36,19 @@ extension AppScaleX on BuildContext {
   double get productCardExtent {
     final textScale = MediaQuery.textScalerOf(this).scale(1).clamp(1.0, 3.0);
     final art = s(AppLayout.productArtHeight);
-    final padding = s(36);
-    final save = s(AppLayout.tapTarget) * textScale;
-    final label = s(22) * textScale;
-    final price = s(22) * textScale;
-    final stock = s(18) * textScale;
-    final cta = s(18) * textScale;
-    final gaps = s(8) * 5;
-    final computed = art + padding + save + label + price + stock + cta + gaps;
-    return computed < s(AppLayout.productCardHeight)
-        ? s(AppLayout.productCardHeight)
-        : computed;
+    final padding = s(22);
+    // Label is 14/18 and caption is 12/16. Type is not width-scaled.
+    final name = 18 * textScale * 2;
+    final price = 18 * textScale;
+    final stock = 16 * textScale;
+    final gaps = s(10);
+    // Text line boxes can round a fraction taller than the sizes above.
+    return art + padding + name + price + stock + gaps + 2;
   }
 }
 
 extension FigTextStyle on TextStyle {
-  TextStyle fig(BuildContext context) {
-    final size = fontSize;
-    if (size == null) return this;
-    return copyWith(fontSize: size * context.figScale);
-  }
+  /// Type stays at its standard point size.
+  /// Spacing and images still scale; letterforms do not.
+  TextStyle fig(BuildContext context) => this;
 }

@@ -6,6 +6,8 @@ import 'package:rak_customer/core/data/repositories/asset_access_repository_impl
 import 'package:rak_customer/core/domain/clock.dart';
 import 'package:rak_customer/core/domain/repositories/asset_access_repository.dart';
 import 'package:rak_customer/core/domain/repositories/auth_repository.dart';
+import 'package:rak_customer/core/domain/repositories/cart_count_repository.dart';
+import 'package:rak_customer/core/domain/repositories/home_project_repository.dart';
 import 'package:rak_customer/core/domain/repositories/shop_branch_repository.dart';
 import 'package:rak_customer/core/storage/secure_session_storage.dart';
 import 'package:rak_customer/core/storage/session_storage.dart';
@@ -20,6 +22,7 @@ import 'package:rak_customer/features/auth/presentation/cubit/phone_entry_cubit.
 import 'package:rak_customer/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:rak_customer/features/cart/data/datasources/cart_local_datasource.dart';
 import 'package:rak_customer/features/cart/data/datasources/checkout_local_datasource.dart';
+import 'package:rak_customer/features/cart/data/repositories/cart_count_repository_impl.dart';
 import 'package:rak_customer/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:rak_customer/features/cart/data/repositories/checkout_repository_impl.dart';
 import 'package:rak_customer/features/cart/domain/repositories/cart_repository.dart';
@@ -30,6 +33,7 @@ import 'package:rak_customer/features/cart/domain/usecases/get_delivery_address.
 import 'package:rak_customer/features/cart/domain/usecases/get_shop_order.dart';
 import 'package:rak_customer/features/cart/domain/usecases/list_shop_orders.dart';
 import 'package:rak_customer/features/cart/domain/usecases/place_order.dart';
+import 'package:rak_customer/features/cart/domain/usecases/update_shop_order_status.dart';
 import 'package:rak_customer/features/cart/domain/usecases/save_delivery_address.dart';
 import 'package:rak_customer/features/cart/domain/usecases/update_cart_line_quantity.dart';
 import 'package:rak_customer/features/cart/presentation/cubit/cart_cubit.dart';
@@ -47,7 +51,10 @@ import 'package:rak_customer/features/catalogue/domain/usecases/get_selected_sho
 import 'package:rak_customer/features/catalogue/domain/usecases/is_product_available_at_branch.dart';
 import 'package:rak_customer/features/catalogue/domain/usecases/list_shop_branches.dart';
 import 'package:rak_customer/features/catalogue/domain/usecases/select_shop_branch.dart';
+import 'package:rak_customer/features/catalogue/domain/usecases/get_product_enquiry.dart';
+import 'package:rak_customer/features/catalogue/domain/usecases/list_product_enquiries.dart';
 import 'package:rak_customer/features/catalogue/domain/usecases/submit_product_enquiry.dart';
+import 'package:rak_customer/features/catalogue/domain/usecases/update_enquiry_status.dart';
 import 'package:rak_customer/features/designs/data/datasources/designs_local_datasource.dart';
 import 'package:rak_customer/features/designs/data/repositories/design_repository_impl.dart';
 import 'package:rak_customer/features/designs/domain/repositories/design_repository.dart';
@@ -76,10 +83,12 @@ import 'package:rak_customer/features/notifications/domain/usecases/recheck_noti
 import 'package:rak_customer/features/notifications/domain/usecases/register_device.dart';
 import 'package:rak_customer/features/notifications/domain/usecases/unregister_device.dart';
 import 'package:rak_customer/features/projects/data/datasources/project_local_datasource.dart';
+import 'package:rak_customer/features/projects/data/repositories/home_project_repository_impl.dart';
 import 'package:rak_customer/features/projects/data/repositories/project_repository_impl.dart';
 import 'package:rak_customer/features/projects/domain/repositories/project_repository.dart';
 import 'package:rak_customer/features/projects/domain/usecases/get_my_projects.dart';
 import 'package:rak_customer/features/projects/domain/usecases/get_project.dart';
+import 'package:rak_customer/features/projects/presentation/approval_book.dart';
 import 'package:rak_customer/features/projects/presentation/cubit/project_detail_cubit.dart';
 import 'package:rak_customer/features/projects/presentation/cubit/project_list_cubit.dart';
 import 'package:rak_customer/features/support/data/datasources/support_local_datasource.dart';
@@ -89,6 +98,7 @@ import 'package:rak_customer/features/support/domain/usecases/create_support_que
 import 'package:rak_customer/features/support/domain/usecases/get_support_contexts.dart';
 import 'package:rak_customer/features/support/domain/usecases/get_support_queries.dart';
 import 'package:rak_customer/features/support/domain/usecases/get_support_query.dart';
+import 'package:rak_customer/features/support/domain/usecases/update_support_status.dart';
 import 'package:rak_customer/features/updates/data/datasources/updates_local_datasource.dart';
 import 'package:rak_customer/features/updates/data/repositories/updates_repository_impl.dart';
 import 'package:rak_customer/features/updates/domain/repositories/updates_repository.dart';
@@ -135,7 +145,11 @@ Future<void> configureDependencies({
     () => ProjectRepositoryImpl(sl()),
   );
   sl.registerLazySingleton(() => GetMyProjects(sl()));
+  sl.registerLazySingleton<HomeProjectRepository>(
+    () => HomeProjectRepositoryImpl(sl()),
+  );
   sl.registerLazySingleton(() => GetProject(sl()));
+  sl.registerLazySingleton(ApprovalBook.new);
   sl.registerFactory(() => ProjectListCubit(getMyProjects: sl()));
   sl.registerFactory(() => ProjectDetailCubit(getProject: sl()));
 
@@ -170,9 +184,16 @@ Future<void> configureDependencies({
     () => EnquiryRepositoryImpl(sl()),
   );
   sl.registerLazySingleton(() => SubmitProductEnquiry(sl()));
+  sl.registerLazySingleton(() => GetProductEnquiry(sl()));
+  sl.registerLazySingleton(() => ListProductEnquiries(sl()));
+  sl.registerLazySingleton(() => UpdateEnquiryStatus(sl()));
 
   sl.registerLazySingleton(() => CartLocalDatasource(sl()));
   sl.registerLazySingleton<CartRepository>(() => CartRepositoryImpl(sl()));
+  sl.registerLazySingleton<CartCountRepository>(
+    () => CartCountRepositoryImpl(sl(), sl()),
+    dispose: (repository) => (repository as CartCountRepositoryImpl).close(),
+  );
   sl.registerLazySingleton(() => GetCart(sl()));
   sl.registerLazySingleton(() => AddCartItem(sl()));
   sl.registerLazySingleton(() => UpdateCartLineQuantity(sl()));
@@ -195,6 +216,7 @@ Future<void> configureDependencies({
   sl.registerLazySingleton(() => PlaceOrder(sl()));
   sl.registerLazySingleton(() => GetShopOrder(sl()));
   sl.registerLazySingleton(() => ListShopOrders(sl()));
+  sl.registerLazySingleton(() => UpdateShopOrderStatus(sl()));
 
   sl.registerLazySingleton(() => UpdatesLocalDatasource(db: sl(), clock: sl()));
   sl.registerLazySingleton<UpdatesRepository>(
@@ -240,6 +262,7 @@ Future<void> configureDependencies({
   sl.registerLazySingleton(() => GetSupportQuery(sl()));
   sl.registerLazySingleton(() => GetSupportContexts(sl()));
   sl.registerLazySingleton(() => CreateSupportQuery(sl()));
+  sl.registerLazySingleton(() => UpdateSupportStatus(sl()));
 
   sl.registerLazySingleton<DeviceIdentity>(
     () => const DeviceIdentity(

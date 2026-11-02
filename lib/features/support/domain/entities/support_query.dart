@@ -26,6 +26,19 @@ class SupportQuery {
     if (orderId != null) return 'Order';
     return 'Support';
   }
+
+  String get statusLabel => switch (status) {
+    'replied' => 'Consultant replied',
+    'closed' => 'Closed',
+    _ => 'Sent',
+  };
+
+  String? get consultantReply {
+    if (status == 'replied' || status == 'closed') {
+      return 'Thanks for writing. I have your note and will confirm the next step on this ${contextLabel.toLowerCase()}.';
+    }
+    return null;
+  }
 }
 
 class SupportContextOption {

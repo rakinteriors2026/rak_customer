@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_text.dart';
 
@@ -19,6 +20,13 @@ class RakMediaViewerScaffold extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.ink,
         foregroundColor: AppColors.white,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemNavigationBarColor: AppColors.ink,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
         elevation: 0,
         automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: AppColors.white),

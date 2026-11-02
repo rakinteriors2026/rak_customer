@@ -1,11 +1,16 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:rak_customer/core/di/injection.dart';
 import 'package:rak_customer/core/domain/clock.dart';
 import 'package:rak_customer/core/domain/entities/asset_access.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
-import 'package:rak_customer/core/theme/app_spacing.dart';
+import 'package:rak_customer/core/theme/app_scale.dart';
+import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/features/documents/domain/usecases/request_document_access.dart';
+import 'package:rak_customer/features/documents/presentation/document_preview.dart';
 import 'package:rak_customer/shared/widgets/app_loading.dart';
+import 'package:rak_customer/shared/widgets/fig_text.dart';
+import 'package:rak_customer/shared/widgets/rak_photo.dart';
 
 class DocumentViewerPage extends StatefulWidget {
   const DocumentViewerPage({
@@ -62,37 +67,47 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
     final now = sl<Clock>().now();
     final expired = _access != null && _access!.isExpiredAt(now);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                icon: const Icon(CupertinoIcons.chevron_back),
+                onPressed: () => Navigator.of(context).maybePop(),
+              )
+            : null,
+      ),
       body: _loading
           ? const AppLoading()
           : _unavailable
           ? const Center(child: Text('No longer available'))
           : ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: context.figPagePadding,
               children: [
-                const Icon(
-                  Icons.picture_as_pdf_outlined,
-                  size: 72,
-                  color: AppColors.primary,
+                RakPhoto(
+                  asset: documentPreviewAsset(
+                    assetId: widget.assetId,
+                    title: widget.title,
+                  ),
+                  height: 220,
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  widget.title,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
+                SizedBox(height: context.s(16)),
+                FigText(widget.title, style: AppText.screenTitle),
+                SizedBox(height: context.s(6)),
+                FigText(
                   expired
-                      ? 'Link expired — tap refresh to request a new one.'
-                      : 'Opened via a short-lived link. It is not saved on this device.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
+                      ? 'This link has expired. Refresh it to open the file again.'
+                      : 'Opened with a short-lived link. The file is not saved on this phone.',
+                  style: AppText.body,
+                  color: AppColors.muted,
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                OutlinedButton(
-                  onPressed: _recheck,
-                  child: const Text('Refresh link'),
+                SizedBox(height: context.s(8)),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _recheck,
+                    child: const Text('Refresh link'),
+                  ),
                 ),
               ],
             ),

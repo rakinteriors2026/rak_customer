@@ -4,28 +4,29 @@ class AppColors {
   /// Official RAK logo red. Use for brand marks, not buttons.
   static const logoRed = Color(0xFFEC1847);
 
-  /// Accessible action red (white-on-red 5.25:1).
-  static const accent = Color(0xFFD70B39);
+  /// Near-black action colour. White on this ink is about 16:1.
+  static const accent = Color(0xFF1A1A1A);
   static const buttonPrimary = accent;
   static const primary = buttonPrimary;
-  static const primaryContainer = Color(0xFFF2ECE8);
-  static const ink = Color(0xFF251F20);
+  static const primaryContainer = Color(0xFFF0EBE3);
+  static const ink = Color(0xFF1A1A1A);
   static const onPrimary = Color(0xFFFFFFFF);
-  static const muted = Color(0xFF6D6463);
+  /// Warm gray. About 7:1 on white, so 10pt captions stay readable.
+  static const muted = Color(0xFF5C574F);
   static const inkMuted = muted;
-  static const canvas = Color(0xFFFAF8F6);
+  static const canvas = Color(0xFFF6F4F1);
   static const background = canvas;
   static const surface = Color(0xFFFFFFFF);
-  static const soft = Color(0xFFF2ECE8);
+  static const soft = Color(0xFFF0EBE3);
   static const accentMuted = soft;
-  static const line = Color(0xFFDDD4CE);
+  static const line = Color(0xFFE7E2DA);
   static const outline = line;
-  static const sand = Color(0xFFE8DCD3);
+  static const sand = Color(0xFFEFEAE3);
   static const surfaceMuted = sand;
-  static const brass = Color(0xFFB59A68);
+  static const brass = Color(0xFF8C7355);
   static const onAccent = onPrimary;
   static const white = onAccent;
-  static const success = Color(0xFF153E35);
+  static const success = ink;
   static const forest = success;
   static const warning = Color(0xFF9A6B24);
   static const error = Color(0xFF9B2C2C);

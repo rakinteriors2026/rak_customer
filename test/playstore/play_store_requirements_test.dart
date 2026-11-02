@@ -77,6 +77,8 @@ void main() {
       await tester.pumpWidget(RakCustomerApp(sessionCubit: sessionCubit));
       await tester.pumpAndSettle();
       expect(find.textContaining('Privacy Policy'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
     });
   });
 

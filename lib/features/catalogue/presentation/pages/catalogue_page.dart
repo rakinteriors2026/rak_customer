@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +12,7 @@ import 'package:rak_customer/core/theme/app_layout.dart';
 import 'package:rak_customer/core/theme/app_radii.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_text.dart';
+import 'package:rak_customer/core/theme/app_theme.dart';
 import 'package:rak_customer/features/catalogue/domain/entities/catalogue_product.dart';
 import 'package:rak_customer/features/catalogue/presentation/cubit/catalogue_cubit.dart';
 import 'package:rak_customer/features/catalogue/presentation/cubit/favourites_cubit.dart';
@@ -23,26 +27,29 @@ import 'package:rak_customer/shared/widgets/rak_button.dart';
 import 'package:rak_customer/shared/widgets/rak_page.dart';
 
 class CataloguePage extends StatelessWidget {
-  const CataloguePage({super.key});
+  const CataloguePage({super.key, required this.watchCartCount});
+
+  final Stream<int> Function() watchCartCount;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<CatalogueCubit>()..load(),
-      child: const _CatalogueView(),
+      child: _CatalogueView(watchCartCount: watchCartCount),
     );
   }
 }
 
 class _CatalogueView extends StatelessWidget {
-  const _CatalogueView();
+  const _CatalogueView({required this.watchCartCount});
+
+  final Stream<int> Function() watchCartCount;
 
   @override
   Widget build(BuildContext context) {
     return RakPage(
-      title: 'RAK Store',
-      subtitle: 'Thoughtful pieces. Beautiful spaces.',
-      contentGap: 16,
+      header: _ShopHeader(watchCartCount: watchCartCount),
+      contentGap: 8,
       child: BlocBuilder<CatalogueCubit, CatalogueState>(
         buildWhen: (previous, current) {
           if (previous is CatalogueLoaded && current is CatalogueLoaded) {
@@ -82,41 +89,27 @@ class _CatalogueScaffold extends StatelessWidget {
           padding: context.figPagePadding,
           sliver: SliverList(
             delegate: SliverChildListDelegate.fixed([
-              const _StoreShortcuts(),
-              SizedBox(height: context.s(16)),
-              const _SearchField(),
-              SizedBox(height: context.s(16)),
-              const _PromoCarousel(),
-              SizedBox(height: context.s(12)),
-              Text(
-                'THE LIVING EDIT   /   01—02',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
-                  letterSpacing: 1.2,
-                ),
-              ),
+              const _SearchRow(),
               SizedBox(height: context.s(16)),
               const _CategoryStrip(),
               SizedBox(height: context.s(16)),
-              const _PopularPicksHeader(),
-              SizedBox(height: context.s(16)),
-              const _ProductGrid(),
-              SizedBox(height: context.s(16)),
-              Text(
-                'Need something made just for you?',
-                style: Theme.of(context).textTheme.titleMedium,
+              const _FeaturedPiece(),
+              SizedBox(height: context.s(20)),
+              const _CatalogueSections(),
+              SizedBox(height: context.s(8)),
+              const Divider(height: 1, color: AppColors.line),
+              _ShopLink(
+                icon: CupertinoIcons.chat_bubble,
+                title: 'Enquire about custom furniture',
+                detail: 'A quotation, not an order',
+                onTap: () => context.push('/enquiry'),
               ),
-              SizedBox(height: context.s(12)),
-              RakButton(
-                label: 'Enquire about custom furniture',
-                style: RakButtonStyle.secondary,
-                onPressed: () => context.push('/enquiry'),
-              ),
-              SizedBox(height: context.s(12)),
-              RakButton(
-                label: 'Explore the RAK sales kit',
-                style: RakButtonStyle.secondary,
-                onPressed: () => context.push('/sales-kit'),
+              const Divider(height: 1, color: AppColors.line),
+              _ShopLink(
+                icon: CupertinoIcons.square_stack_3d_up,
+                title: 'Explore the RAK sales kit',
+                detail: 'Featured work and materials',
+                onTap: () => context.push('/sales-kit'),
               ),
             ]),
           ),
@@ -126,164 +119,280 @@ class _CatalogueScaffold extends StatelessWidget {
   }
 }
 
-class _StoreShortcuts extends StatelessWidget {
-  const _StoreShortcuts();
+class _ShopHeader extends StatelessWidget {
+  const _ShopHeader({required this.watchCartCount});
+
+  final Stream<int> Function() watchCartCount;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: context.s(AppLayout.tapTarget),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.s(24),
+        context.s(context.figHeightConstrained ? 12 : 20),
+        context.s(24),
+        context.s(8),
+      ),
       child: Row(
         children: [
           Expanded(
-            child: GestureDetector(
-              onTap: () => context.push('/shop/branch'),
-              behavior: HitTestBehavior.opaque,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: BlocBuilder<ShopBranchCubit, ShopBranch>(
-                  bloc: sl<ShopBranchCubit>(),
-                  builder: (context, branch) {
-                    return FigText(branch.label, style: AppText.caption);
-                  },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FigText('Hi!', style: AppText.heading),
+                SizedBox(height: context.s(4)),
+                FigText(
+                  'Which product do you want to buy?',
+                  style: AppText.body,
+                  color: AppColors.muted,
                 ),
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => context.push('/favourites'),
-            child: SizedBox(
-              width: context.s(64),
-              height: context.s(AppLayout.tapTarget),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FigText(
-                  '♡ Saved',
-                  style: AppText.caption,
-                  color: AppColors.accent,
+                SizedBox(height: context.s(4)),
+                GestureDetector(
+                  onTap: () => context.push('/shop/branch'),
+                  child: BlocBuilder<ShopBranchCubit, ShopBranch>(
+                    bloc: sl<ShopBranchCubit>(),
+                    builder: (context, branch) {
+                      return FigText(
+                        branch.label,
+                        style: AppText.caption,
+                        color: AppColors.accent,
+                      );
+                    },
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
           SizedBox(width: context.s(12)),
-          GestureDetector(
-            onTap: () => context.push('/cart'),
-            child: SizedBox(
+          _CartButton(watchCartCount: watchCartCount),
+        ],
+      ),
+    );
+  }
+}
+
+class _CartButton extends StatefulWidget {
+  const _CartButton({required this.watchCartCount});
+
+  final Stream<int> Function() watchCartCount;
+
+  @override
+  State<_CartButton> createState() => _CartButtonState();
+}
+
+class _CartButtonState extends State<_CartButton> {
+  int _count = 0;
+  GoRouter? _router;
+  StreamSubscription<int>? _cartCount;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final router = GoRouter.of(context);
+    if (!identical(_router, router)) {
+      _router?.routerDelegate.removeListener(_followCart);
+      _router = router;
+      router.routerDelegate.addListener(_followCart);
+      _followCart();
+    }
+  }
+
+  @override
+  void dispose() {
+    _router?.routerDelegate.removeListener(_followCart);
+    _cartCount?.cancel();
+    super.dispose();
+  }
+
+  void _followCart() {
+    _cartCount?.cancel();
+    _cartCount = widget.watchCartCount().listen((count) {
+      if (!mounted || count == _count) return;
+      setState(() => _count = count);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final badge = context.s(16);
+    return Semantics(
+      button: true,
+      label: 'Cart, $_count',
+      excludeSemantics: true,
+      child: IconButton(
+        tooltip: 'Cart',
+        onPressed: () => context.go('/cart'),
+        padding: EdgeInsets.zero,
+        constraints: BoxConstraints.tight(Size.square(context.s(44))),
+        icon: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Container(
               width: context.s(44),
-              height: context.s(AppLayout.tapTarget),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FigText(
-                  'Bag',
-                  style: AppText.caption,
-                  color: AppColors.accent,
+              height: context.s(44),
+              decoration: const BoxDecoration(
+                color: AppColors.soft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                CupertinoIcons.cart,
+                color: AppColors.accent,
+                size: context.s(20),
+              ),
+            ),
+            Positioned(
+              right: -context.s(2),
+              top: -context.s(2),
+              child: Container(
+                constraints: BoxConstraints(minWidth: badge, minHeight: badge),
+                padding: EdgeInsets.symmetric(horizontal: context.s(4)),
+                decoration: BoxDecoration(
+                  color: AppColors.ink,
+                  borderRadius: BorderRadius.circular(badge),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '$_count',
+                  style: AppText.caption2.copyWith(
+                    color: AppColors.white,
+                    height: 1,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SearchField extends StatelessWidget {
-  const _SearchField();
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push('/search'),
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          hintText: 'Search furniture & home accents',
-        ),
-        child: Text(
-          'Search furniture & home accents',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+          ],
         ),
       ),
     );
   }
 }
 
-class _PromoCarousel extends StatelessWidget {
-  const _PromoCarousel();
+class _ShopLink extends StatelessWidget {
+  const _ShopLink({
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: context.s(AppLayout.promoCarouselHeight),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          Align(
-            alignment: Alignment.topLeft,
-            child: _PromoCard(
-              eyebrow: 'THE LIVING EDIT',
-              title: 'Considered comfort',
-              cta: 'Explore seating →',
-              accent: true,
-              onTap: () => context.read<CatalogueCubit>().selectCategory(
-                'cat_furniture',
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.s(16)),
+        child: Row(
+          children: [
+            Icon(icon, size: context.s(18), color: AppColors.ink),
+            SizedBox(width: context.s(14)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FigText(title, style: AppText.label),
+                  SizedBox(height: context.s(2)),
+                  FigText(detail, style: AppText.caption),
+                ],
               ),
             ),
-          ),
-          SizedBox(width: context.s(12)),
-          Align(
-            alignment: Alignment.topLeft,
-            child: _PromoCard(
-              eyebrow: 'THE FINISHING TOUCH',
-              title: 'Small details. Big difference.',
-              cta: 'Discover home accents →',
-              accent: false,
-              onTap: () =>
-                  context.read<CatalogueCubit>().selectCategory('cat_decor'),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: context.s(14),
+              color: AppColors.muted,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _PopularPicksHeader extends StatelessWidget {
-  const _PopularPicksHeader();
+class _SearchRow extends StatelessWidget {
+  const _SearchRow();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: context.s(AppLayout.tapTarget),
-      child: Row(
-        children: [
-          Expanded(
-            child: FigText(
-              'Popular picks',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppText.title,
-            ),
-          ),
-          SizedBox(width: context.s(12)),
-          GestureDetector(
-            onTap: () => context.push('/filters'),
-            child: SizedBox(
-              width: context.s(130),
-              height: context.s(AppLayout.tapTarget),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: FigText(
-                  'Filter & sort',
-                  style: AppText.caption,
-                  color: AppColors.accent,
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => context.push('/shop/search'),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: context.s(10)),
+                  child: Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.search,
+                        size: context.s(16),
+                        color: AppColors.muted,
+                      ),
+                      SizedBox(width: context.s(8)),
+                      const FigText(
+                        'Search furniture',
+                        style: AppText.caption,
+                        color: AppColors.muted,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+            InkWell(
+              onTap: () => context.push('/shop/filters'),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: context.s(10),
+                  horizontal: context.s(4),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      CupertinoIcons.slider_horizontal_3,
+                      size: context.s(16),
+                      color: AppColors.ink,
+                    ),
+                    SizedBox(width: context.s(6)),
+                    const FigText('Filter', style: AppText.label),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 1, color: AppColors.line),
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.onViewAll});
+
+  final String title;
+  final VoidCallback onViewAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: FigText(title, style: AppText.title)),
+        GestureDetector(
+          onTap: onViewAll,
+          child: FigText(
+            'View all',
+            style: AppText.caption,
+            color: AppColors.accent,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -299,25 +408,103 @@ class _CategoryStrip extends StatelessWidget {
       builder: (context, selectedCategoryId) {
         final loaded = context.read<CatalogueCubit>().state;
         if (loaded is! CatalogueLoaded) return const SizedBox.shrink();
-        return SizedBox(
-          height: context.s(AppLayout.tapTarget),
-          child: ListView(
-            key: const PageStorageKey('shop-categories'),
-            scrollDirection: Axis.horizontal,
-            children: [
-              _CategoryChip(
-                label: 'All',
-                selected: selectedCategoryId == null,
-                onTap: () =>
-                    context.read<CatalogueCubit>().selectCategory(null),
-              ),
-              ...loaded.categories.map(
-                (category) => _CategoryChip(
-                  label: category.name,
-                  selected: selectedCategoryId == category.id,
-                  onTap: () => context.read<CatalogueCubit>().selectCategory(
-                    category.id,
+        final tabs = [
+          _CategoryTab(
+            label: 'All',
+            selected: selectedCategoryId == null,
+            onTap: () => context.read<CatalogueCubit>().selectCategory(null),
+          ),
+          ...loaded.categories.map(
+            (category) => _CategoryTab(
+              label: category.name,
+              selected: selectedCategoryId == category.id,
+              onTap: () =>
+                  context.read<CatalogueCubit>().selectCategory(category.id),
+            ),
+          ),
+        ];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  key: const PageStorageKey('shop-categories'),
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: tabs,
+                    ),
                   ),
+                );
+              },
+            ),
+            const Divider(height: 1, color: AppColors.line),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FeaturedPiece extends StatelessWidget {
+  const _FeaturedPiece();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<CatalogueCubit, CatalogueState, String?>(
+      selector: (state) =>
+          state is CatalogueLoaded ? state.selectedCategoryId : null,
+      builder: (context, _) {
+        final loaded = context.read<CatalogueCubit>().state;
+        if (loaded is! CatalogueLoaded || loaded.products.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final product = loaded.products.first;
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(context.s(16)),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(context.s(AppRadii.card)),
+            boxShadow: AppDecorations.card,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(context.s(16)),
+                child: SizedBox(
+                  height: context.s(220),
+                  width: double.infinity,
+                  child: ProductArtwork(
+                    imageHint: product.imageHint,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              SizedBox(height: context.s(12)),
+              const _PagerDots(count: 3, index: 0),
+              SizedBox(height: context.s(12)),
+              FigText('Modern pieces\nfor your home', style: AppText.heading),
+              SizedBox(height: context.s(8)),
+              FigText(
+                product.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.body,
+                color: AppColors.muted,
+              ),
+              SizedBox(height: context.s(12)),
+              Align(
+                alignment: Alignment.centerRight,
+                child: RakButton(
+                  label: 'Get now',
+                  width: 140,
+                  height: 44,
+                  onPressed: () => context.push('/shop/products/${product.id}'),
                 ),
               ),
             ],
@@ -328,8 +515,34 @@ class _CategoryStrip extends StatelessWidget {
   }
 }
 
-class _ProductGrid extends StatelessWidget {
-  const _ProductGrid();
+class _PagerDots extends StatelessWidget {
+  const _PagerDots({required this.count, required this.index});
+
+  final int count;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < count; i++) ...[
+          if (i > 0) SizedBox(width: context.s(6)),
+          Container(
+            width: context.s(i == index ? 16 : 6),
+            height: context.s(6),
+            decoration: BoxDecoration(
+              color: i == index ? AppColors.accent : AppColors.line,
+              borderRadius: BorderRadius.circular(context.s(6)),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CatalogueSections extends StatelessWidget {
+  const _CatalogueSections();
 
   @override
   Widget build(BuildContext context) {
@@ -348,133 +561,135 @@ class _ProductGrid extends StatelessWidget {
             ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           );
         }
-        return GridView.builder(
-          key: ValueKey(selectedCategoryId),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: products.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: context.productCrossAxisCount,
-            mainAxisSpacing: context.s(AppLayout.productGap),
-            crossAxisSpacing: context.s(AppLayout.productGap),
-            mainAxisExtent: context.productCardExtent,
-          ),
-          itemBuilder: (context, index) {
-            final product = products[index];
-            return ProductCard(
-              key: ValueKey(product.id),
-              product: product,
-              onTap: () => context.push('/shop/products/${product.id}'),
-            );
-          },
+        final split = products.length > 2;
+        final arrivals = split
+            ? products.take(2).toList()
+            : const <CatalogueProduct>[];
+        final popular = split ? products.sublist(2) : products;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (split) ...[
+              _SectionHeader(
+                title: 'New arrival',
+                onViewAll: () =>
+                    context.read<CatalogueCubit>().selectCategory(null),
+              ),
+              SizedBox(height: context.s(12)),
+              SizedBox(
+                height: context.productCardExtent,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: arrivals.length,
+                  separatorBuilder: (_, _) => SizedBox(width: context.s(12)),
+                  itemBuilder: (context, index) {
+                    final product = arrivals[index];
+                    return SizedBox(
+                      width: context.s(AppLayout.productCardWidth),
+                      child: ProductCard(
+                        key: ValueKey('arrival-${product.id}'),
+                        product: product,
+                        onTap: () =>
+                            context.push('/shop/products/${product.id}'),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: context.s(20)),
+            ],
+            _SectionHeader(
+              title: 'Popular',
+              onViewAll: () => context.push('/shop/filters'),
+            ),
+            SizedBox(height: context.s(12)),
+            _ProductGrid(products: popular, categoryKey: selectedCategoryId),
+          ],
         );
       },
     );
   }
 }
 
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
+class _ProductGrid extends StatelessWidget {
+  const _ProductGrid({required this.products, required this.categoryKey});
+
+  final List<CatalogueProduct> products;
+  final String? categoryKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      key: ValueKey(categoryKey),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: products.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: context.productCrossAxisCount,
+        mainAxisSpacing: context.s(AppLayout.productGap),
+        crossAxisSpacing: context.s(AppLayout.productGap),
+        mainAxisExtent: context.productCardExtent,
+      ),
+      itemBuilder: (context, index) {
+        final product = products[index];
+        return ProductCard(
+          key: ValueKey(product.id),
+          product: product,
+          onTap: () => context.push('/shop/products/${product.id}'),
+        );
+      },
+    );
+  }
+}
+
+class _CategoryTab extends StatelessWidget {
+  const _CategoryTab({
     required this.label,
     required this.selected,
     required this.onTap,
   });
+
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(right: context.s(16)),
-      child: SizedBox(
-        height: context.s(AppLayout.tapTarget),
-        child: GestureDetector(
-          onTap: onTap,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: FigText(
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.only(top: context.s(4), right: context.s(12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FigText(
               label,
-              style: selected
-                  ? AppText.label
-                  : AppText.body.copyWith(color: AppColors.muted),
+              style: AppText.label,
+              color: selected ? AppColors.ink : AppColors.muted,
             ),
-          ),
+            SizedBox(height: context.s(8)),
+            SizedBox(
+              height: context.s(2),
+              width: context.s(18),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.ink : Colors.transparent,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _PromoCard extends StatelessWidget {
-  const _PromoCard({
-    required this.eyebrow,
-    required this.title,
-    required this.cta,
-    required this.accent,
-    required this.onTap,
-  });
-
-  final String eyebrow;
-  final String title;
-  final String cta;
-  final bool accent;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = context.s(AppRadii.button);
-    return Material(
-      color: accent ? AppColors.accent : AppColors.sand,
-      borderRadius: BorderRadius.circular(radius),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        splashColor: accent
-            ? AppColors.white.withValues(alpha: 0.12)
-            : AppColors.accent.withValues(alpha: 0.10),
-        highlightColor: accent
-            ? AppColors.white.withValues(alpha: 0.06)
-            : AppColors.accent.withValues(alpha: 0.05),
-        child: SizedBox(
-          width: context.s(AppLayout.promoWidth),
-          height: context.s(AppLayout.promoHeight),
-          child: Padding(
-            padding: EdgeInsets.all(context.s(16)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FigText(
-                  eyebrow,
-                  style: AppText.caption,
-                  color: accent ? AppColors.white : AppColors.accent,
-                ),
-                SizedBox(height: context.s(8)),
-                FigText(
-                  title,
-                  style: AppText.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  color: accent ? AppColors.white : AppColors.ink,
-                ),
-                SizedBox(height: context.s(8)),
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FigText(
-                      cta,
-                      style: AppText.label,
-                      color: accent ? AppColors.white : AppColors.accent,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+String _availabilityLabel(CatalogueProduct product) {
+  return switch (product.salesMode) {
+    SalesMode.fixedPrice => 'In stock',
+    SalesMode.madeToOrder => 'Made to order',
+    SalesMode.quotationOnly => 'Quote only',
+  };
 }
 
 class ProductCard extends StatelessWidget {
@@ -485,90 +700,70 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = context.s(AppLayout.productRadius);
+    final radius = context.s(AppRadii.card);
+    final price = product.priceMinor == null
+        ? 'Quote only'
+        : MoneyFormatter.format(
+            Money(minorUnits: product.priceMinor!, currency: product.currency),
+          );
     return Material(
       color: AppColors.surface,
       clipBehavior: Clip.antiAlias,
       borderRadius: BorderRadius.circular(radius),
       child: InkWell(
         onTap: onTap,
-        splashColor: AppColors.accent.withValues(alpha: 0.10),
-        highlightColor: AppColors.accent.withValues(alpha: 0.05),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: context.s(AppLayout.productArtHeight),
-              width: double.infinity,
-              child: ProductArtwork(
-                imageHint: product.imageHint,
-                width: double.infinity,
-                height: context.s(AppLayout.productArtHeight),
-              ),
+            Stack(
+              children: [
+                SizedBox(
+                  height: context.s(AppLayout.productArtHeight),
+                  width: double.infinity,
+                  child: ProductArtwork(
+                    imageHint: product.imageHint,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                Positioned(
+                  top: context.s(8),
+                  right: context.s(8),
+                  child: _SaveControl(productId: product.id),
+                ),
+              ],
             ),
-            SizedBox(height: context.s(8)),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  context.s(12),
-                  context.s(12),
-                  context.s(12),
-                  context.s(24),
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            FigText(
-                              product.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.label,
-                            ),
-                            SizedBox(height: context.s(4)),
-                            FigText(
-                              product.priceMinor == null
-                                  ? 'Quote only'
-                                  : MoneyFormatter.format(
-                                      Money(
-                                        minorUnits: product.priceMinor!,
-                                        currency: product.currency,
-                                      ),
-                                    ),
-                              style: AppText.label,
-                            ),
-                            SizedBox(height: context.s(4)),
-                            FigText(
-                              product.canAddToCart
-                                  ? 'In stock'
-                                  : 'Made to order',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.caption,
-                              color: product.canAddToCart
-                                  ? AppColors.success
-                                  : AppColors.muted,
-                            ),
-                            SizedBox(height: context.s(4)),
-                            _SaveControl(productId: product.id),
-                            FigText(
-                              'View product →',
-                              style: AppText.caption,
-                              color: AppColors.accent,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                context.s(12),
+                context.s(10),
+                context.s(12),
+                context.s(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: 18 * MediaQuery.textScalerOf(context).scale(1) * 2,
+                    child: FigText(
+                      product.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.label,
+                    ),
+                  ),
+                  SizedBox(height: context.s(8)),
+                  FigText(price, style: AppText.label),
+                  SizedBox(height: context.s(2)),
+                  FigText(
+                    _availabilityLabel(product),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.caption,
+                    color: product.canAddToCart
+                        ? AppColors.accent
+                        : AppColors.muted,
+                  ),
+                ],
               ),
             ),
           ],
@@ -588,18 +783,19 @@ class _SaveControl extends StatelessWidget {
     return BlocSelector<FavouritesCubit, Set<String>, bool>(
       selector: (ids) => ids.contains(productId),
       builder: (context, saved) {
-        final textScale = MediaQuery.textScalerOf(context).scale(1);
-        return SizedBox(
-          height: context.s(AppLayout.tapTarget) * textScale.clamp(1.0, 3.0),
-          width: double.infinity,
+        return Material(
+          color: AppColors.surface,
+          shape: const CircleBorder(),
           child: InkWell(
+            customBorder: const CircleBorder(),
             onTap: () => context.read<FavouritesCubit>().toggle(productId),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: FigText(
-                saved ? '♥ Saved' : '♡ Save',
-                style: AppText.caption,
-                color: AppColors.accent,
+            child: SizedBox(
+              width: context.s(32),
+              height: context.s(32),
+              child: Icon(
+                saved ? Icons.favorite : Icons.favorite_border,
+                color: saved ? AppColors.logoRed : AppColors.muted,
+                size: context.s(18),
               ),
             ),
           ),

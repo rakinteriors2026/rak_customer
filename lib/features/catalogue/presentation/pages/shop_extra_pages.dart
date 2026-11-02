@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +8,9 @@ import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_layout.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
+import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/features/catalogue/domain/entities/catalogue_product.dart';
+import 'package:rak_customer/features/catalogue/domain/entities/product_enquiry.dart';
 import 'package:rak_customer/features/catalogue/domain/usecases/submit_product_enquiry.dart';
 import 'package:rak_customer/features/catalogue/presentation/cubit/catalogue_cubit.dart';
 import 'package:rak_customer/features/catalogue/presentation/cubit/favourites_cubit.dart';
@@ -15,6 +18,8 @@ import 'package:rak_customer/features/catalogue/presentation/cubit/product_enqui
 import 'package:rak_customer/features/catalogue/presentation/cubit/shop_branch_cubit.dart';
 import 'package:rak_customer/features/catalogue/presentation/pages/catalogue_page.dart';
 import 'package:rak_customer/shared/widgets/app_empty_state.dart';
+import 'package:rak_customer/shared/widgets/fig_text.dart';
+import 'package:rak_customer/shared/widgets/product_artwork.dart';
 import 'package:rak_customer/shared/widgets/app_error_state.dart';
 import 'package:rak_customer/shared/widgets/app_loading.dart';
 import 'package:rak_customer/shared/widgets/rak_button.dart';
@@ -35,7 +40,7 @@ class FavouritesPage extends StatelessWidget {
               subtitle: ids.isEmpty
                   ? 'Your next favourite is waiting.'
                   : branch.label,
-              onBack: () => context.pop(),
+              onBack: () => _leaveShopPage(context),
               child: BlocProvider(
                 create: (_) => sl<CatalogueCubit>()..load(),
                 child: ids.isEmpty
@@ -110,9 +115,9 @@ class _SearchPageState extends State<SearchPage> {
         bloc: sl<ShopBranchCubit>(),
         builder: (context, branch) {
           return RakPage(
-            title: 'Find your perfect piece',
-            subtitle: 'Branch: ${branch.label}',
-            onBack: () => context.pop(),
+            title: 'Search',
+            subtitle: '${branch.name} · ${branch.area}',
+            onBack: () => _leaveShopPage(context),
             child: Padding(
               padding: context.figPagePadding,
               child: Column(
@@ -120,12 +125,36 @@ class _SearchPageState extends State<SearchPage> {
                 children: [
                   TextField(
                     autofocus: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Search furniture & home accents',
+                    style: AppText.body.fig(context),
+                    decoration: InputDecoration(
+                      hintText: 'Search furniture',
+                      filled: false,
+                      fillColor: Colors.transparent,
+                      prefixIcon: Icon(
+                        CupertinoIcons.search,
+                        size: context.s(16),
+                        color: AppColors.muted,
+                      ),
+                      prefixIconConstraints: BoxConstraints(
+                        minWidth: context.s(28),
+                        minHeight: context.s(28),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: context.s(10),
+                      ),
+                      border: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.line),
+                      ),
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.line),
+                      ),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.ink),
+                      ),
                     ),
                     onChanged: (value) => _query.value = value,
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: context.s(8)),
                   Expanded(
                     child: BlocBuilder<CatalogueCubit, CatalogueState>(
                       buildWhen: (previous, current) =>
@@ -159,25 +188,21 @@ class _SearchPageState extends State<SearchPage> {
                                           )
                                           .toList();
                                 if (products.isEmpty) {
-                                  return Text(
+                                  return const FigText(
                                     'No matches yet.',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(color: AppColors.muted),
+                                    style: AppText.body,
+                                    color: AppColors.muted,
                                   );
                                 }
-                                return ListView.builder(
+                                return ListView.separated(
                                   itemCount: products.length,
+                                  separatorBuilder: (_, _) => const Divider(
+                                    height: 1,
+                                    color: AppColors.line,
+                                  ),
                                   itemBuilder: (context, index) {
-                                    final product = products[index];
-                                    return ListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      title: Text(product.name),
-                                      subtitle: Text(product.specs),
-                                      onTap: () => context.push(
-                                        '/shop/products/${product.id}',
-                                      ),
+                                    return _SearchResult(
+                                      product: products[index],
                                     );
                                   },
                                 );
@@ -197,6 +222,68 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
+class _SearchResult extends StatelessWidget {
+  const _SearchResult({required this.product});
+
+  final CatalogueProduct product;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = ProductArtwork.assetFor(product.imageHint);
+    final thumb = context.s(56);
+    return InkWell(
+      onTap: () => context.push('/shop/products/${product.id}'),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.s(12)),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(context.s(8)),
+              child: ColoredBox(
+                color: AppColors.sand,
+                child: SizedBox(
+                  width: thumb,
+                  height: thumb,
+                  child: Padding(
+                    padding: EdgeInsets.all(context.s(6)),
+                    child: Image.asset(
+                      asset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: context.s(14)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FigText(product.name, style: AppText.label),
+                  SizedBox(height: context.s(2)),
+                  FigText(
+                    product.specs,
+                    style: AppText.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: context.s(14),
+              color: AppColors.muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class FiltersPage extends StatelessWidget {
   const FiltersPage({super.key});
 
@@ -205,7 +292,7 @@ class FiltersPage extends StatelessWidget {
     return RakPage(
       title: 'Filter & sort',
       subtitle: 'Refine your product selection.',
-      onBack: () => context.pop(),
+      onBack: () => _leaveShopPage(context),
       child: ListView(
         padding: context.figPagePadding,
         children: [
@@ -215,7 +302,10 @@ class FiltersPage extends StatelessWidget {
             'Popular, price and newest are applied on the storefront.',
           ),
           const SizedBox(height: AppSpacing.lg),
-          RakButton(label: 'Show results', onPressed: () => context.pop()),
+          RakButton(
+            label: 'Show results',
+            onPressed: () => _leaveShopPage(context),
+          ),
         ],
       ),
     );
@@ -287,11 +377,19 @@ class _ProductEnquiryView extends StatefulWidget {
 }
 
 class _ProductEnquiryViewState extends State<_ProductEnquiryView> {
-  final _message = TextEditingController();
+  final _furniture = TextEditingController();
+  final _dimensions = TextEditingController();
+  final _room = TextEditingController();
+  final _contact = TextEditingController();
+  final _notes = TextEditingController();
 
   @override
   void dispose() {
-    _message.dispose();
+    _furniture.dispose();
+    _dimensions.dispose();
+    _room.dispose();
+    _contact.dispose();
+    _notes.dispose();
     super.dispose();
   }
 
@@ -300,7 +398,7 @@ class _ProductEnquiryViewState extends State<_ProductEnquiryView> {
     return BlocConsumer<ProductEnquiryCubit, ProductEnquiryState>(
       listener: (context, state) {
         if (state is ProductEnquirySuccess) {
-          context.go('/enquiry/sent');
+          context.go('/enquiry/sent', extra: state.enquiry);
         }
       },
       builder: (context, state) {
@@ -315,12 +413,45 @@ class _ProductEnquiryViewState extends State<_ProductEnquiryView> {
             padding: context.figPagePadding,
             children: [
               TextField(
-                controller: _message,
+                controller: _furniture,
+                enabled: !ready.submitting,
+                decoration: const InputDecoration(
+                  hintText: 'Furniture or product',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _dimensions,
+                enabled: !ready.submitting,
+                decoration: const InputDecoration(
+                  hintText: 'Dimensions, if known',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _room,
+                enabled: !ready.submitting,
+                decoration: const InputDecoration(
+                  hintText: 'Room or project',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _contact,
+                enabled: !ready.submitting,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  hintText: 'Contact number, if we should call',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _notes,
                 enabled: !ready.submitting,
                 minLines: 4,
                 maxLines: 8,
                 decoration: const InputDecoration(
-                  hintText: 'Tell us about the piece and your space',
+                  hintText: 'Requirements and comments',
                 ),
               ),
               if (ready.errorMessage != null) ...[
@@ -337,7 +468,13 @@ class _ProductEnquiryViewState extends State<_ProductEnquiryView> {
                 onPressed: ready.submitting
                     ? null
                     : () => context.read<ProductEnquiryCubit>().submit(
-                        _message.text,
+                        EnquiryDraft(
+                          furnitureType: _furniture.text,
+                          dimensions: _dimensions.text,
+                          room: _room.text,
+                          contact: _contact.text,
+                          notes: _notes.text,
+                        ),
                       ),
               ),
             ],
@@ -349,29 +486,66 @@ class _ProductEnquiryViewState extends State<_ProductEnquiryView> {
 }
 
 class EnquirySentPage extends StatelessWidget {
-  const EnquirySentPage({super.key});
+  const EnquirySentPage({super.key, this.enquiry});
+
+  final ProductEnquiry? enquiry;
 
   @override
   Widget build(BuildContext context) {
+    final reference = enquiry?.id;
     return RakPage(
       title: 'Enquiry sent',
-      subtitle: 'A consultant will be in touch.',
+      subtitle: reference == null
+          ? 'A consultant will be in touch.'
+          : 'Reference $reference',
       child: ListView(
         padding: context.figPagePadding,
         children: [
+          Center(
+            child: Container(
+              width: 96,
+              height: 96,
+              decoration: const BoxDecoration(
+                color: AppColors.accent,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check, color: AppColors.white, size: 48),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Text(
-            'This is not an order. We will use the details you shared to prepare a quotation.',
+            reference == null
+                ? 'This is not an order. We will use the details you shared to prepare a quotation.'
+                : 'Reference $reference is submitted. This is not an order, and nothing was added to your cart.',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSpacing.md),
+          if (reference != null) ...[
+            RakButton(
+              label: 'View enquiry',
+              onPressed: () => context.go('/enquiries/$reference'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           RakButton(
             label: 'Back to shop',
+            style: reference == null
+                ? RakButtonStyle.primary
+                : RakButtonStyle.secondary,
             onPressed: () => context.go('/shop'),
           ),
         ],
       ),
     );
+  }
+}
+
+void _leaveShopPage(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go('/shop');
   }
 }

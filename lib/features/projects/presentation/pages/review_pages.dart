@@ -1,10 +1,14 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:rak_customer/core/di/injection.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
-import 'package:rak_customer/core/theme/app_radii.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
 import 'package:rak_customer/core/theme/app_text.dart';
+import 'package:rak_customer/features/projects/presentation/approval_book.dart';
+import 'package:rak_customer/shared/formatters/date_formatter.dart';
+import 'package:rak_customer/shared/widgets/app_empty_state.dart';
 import 'package:rak_customer/shared/widgets/fig_text.dart';
 import 'package:rak_customer/shared/widgets/rak_button.dart';
 import 'package:rak_customer/shared/widgets/rak_page.dart';
@@ -23,55 +27,103 @@ class ReviewCentrePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RakPage(
-      title: 'Your approvals',
-      subtitle: projectName,
-      onBack: () => context.pop(),
-      bottomBar: _FixedBar(
-        child: RakButton(
-          label: 'Back to my project',
-          style: RakButtonStyle.secondary,
-          onPressed: () => context.go('/projects'),
-        ),
-      ),
-      child: ListView(
-        padding: context.figPagePadding,
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: RakStatusBanner(text: '2 decisions need your attention'),
+    final book = sl<ApprovalBook>();
+    return ListenableBuilder(
+      listenable: book,
+      builder: (context, _) {
+        final quotation = book.current(projectId, 'quotation');
+        final design = book.current(projectId, 'design');
+        final history = book.history(projectId);
+        final pending = book.pendingCount(projectId);
+        if (quotation == null && design == null) {
+          return RakPage(
+            title: 'Your approvals',
+            subtitle: projectName,
+            onBack: () => context.pop(),
+            child: const AppEmptyState(
+              title: 'Nothing published to review',
+              message:
+                  'Quotations and designs appear here after your RAK team publishes them.',
+              icon: Icons.fact_check_outlined,
+            ),
+          );
+        }
+        return RakPage(
+          title: 'Your approvals',
+          subtitle: projectName,
+          onBack: () => context.pop(),
+          child: ListView(
+            padding: context.figPagePadding,
+            children: [
+              FigText(
+                pending == 0
+                    ? 'No decisions waiting'
+                    : '$pending decision${pending == 1 ? '' : 's'} waiting',
+                style: AppText.caption,
+              ),
+              SizedBox(height: context.s(8)),
+              const Divider(height: 1, color: AppColors.line),
+              if (quotation != null) ...[
+                _QuietLink(
+                  title: quotation.title,
+                  detail:
+                      'Version ${quotation.version} · ₹8,40,000 · ${quotation.statusLabel}',
+                  onTap: () =>
+                      context.push('/projects/$projectId/review/quotation'),
+                ),
+                const Divider(height: 1, color: AppColors.line),
+              ],
+              if (design != null) ...[
+                _QuietLink(
+                  title: design.title,
+                  detail: 'Version ${design.version} · ${design.statusLabel}',
+                  onTap: () =>
+                      context.push('/projects/$projectId/review/design'),
+                ),
+                const Divider(height: 1, color: AppColors.line),
+              ],
+              SizedBox(height: context.s(28)),
+              FigText('Previous decisions', style: AppText.caption),
+              SizedBox(height: context.s(8)),
+              if (history.isEmpty)
+                FigText(
+                  'Earlier versions will be listed here.',
+                  style: AppText.body,
+                  color: AppColors.muted,
+                )
+              else
+                for (final item in history) ...[
+                  const Divider(height: 1, color: AppColors.line),
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: context.s(14)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FigText(
+                          '${item.title} · Version ${item.version}',
+                          style: AppText.label,
+                        ),
+                        SizedBox(height: context.s(2)),
+                        FigText(
+                          item.decidedAt == null
+                              ? item.statusLabel
+                              : '${item.statusLabel} · ${DateFormatter.displayDate(item.decidedAt!)}',
+                          style: AppText.caption,
+                        ),
+                        if (item.comment != null) ...[
+                          SizedBox(height: context.s(4)),
+                          FigText(item.comment!, style: AppText.body),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              if (history.isNotEmpty)
+                const Divider(height: 1, color: AppColors.line),
+            ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
-            'Review the details at your own pace. Your decision goes directly to your RAK team.',
-            style: AppText.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _ApprovalCard(
-            title: 'Interior quotation',
-            detail: 'Version 4 · ₹8,40,000',
-            action: 'Review quotation',
-            onPressed: () =>
-                context.push('/projects/$projectId/review/quotation'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _ApprovalCard(
-            title: 'Living room design',
-            detail: 'Version 3 · Updated layout',
-            action: 'Review design',
-            onPressed: () => context.push('/projects/$projectId/review/design'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const Divider(height: 1, color: AppColors.line),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Previous decisions', style: AppText.title),
-          const SizedBox(height: AppSpacing.sm),
-          FigText(
-            'Kitchen layout · Version 2\nApproved · 12 Aug 2026',
-            style: AppText.body,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -83,65 +135,89 @@ class QuotationReviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final item = sl<ApprovalBook>().current(projectId, 'quotation');
+    if (item == null) {
+      return RakPage(
+        title: 'Review quotation',
+        subtitle: 'Not published',
+        onBack: () => context.pop(),
+        child: const AppEmptyState(
+          title: 'No quotation to review',
+          message: 'This project does not have a published quotation yet.',
+          icon: Icons.description_outlined,
+        ),
+      );
+    }
+    final open = item.status == ApprovalStatus.pending;
     return RakPage(
-      title: 'Review quotation',
-      subtitle: 'QT-024 · Version 4',
+      title: 'Interior works',
+      subtitle: 'QT-024 · Version ${item.version}',
       onBack: () => context.pop(),
-      bottomBar: _DecisionBar(
-        onReject: () =>
-            context.push('/projects/$projectId/review/quotation/reject'),
-        onApprove: () =>
-            context.push('/projects/$projectId/review/quotation/approve'),
-      ),
+      bottomBar: open
+          ? _QuoteDecisionBar(
+              onReject: () =>
+                  context.push('/projects/$projectId/review/quotation/reject'),
+              onApprove: () =>
+                  context.push('/projects/$projectId/review/quotation/approve'),
+            )
+          : null,
       child: ListView(
         padding: context.figPagePadding,
         children: [
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: RakStatusBanner(text: 'Awaiting your decision'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Interior works', style: AppText.screenTitle),
-          const SizedBox(height: AppSpacing.sm),
           FigText(
-            'Please review the scope, amount and payment milestones before you approve.',
-            style: AppText.body,
-            color: AppColors.muted,
+            open ? 'Awaiting your decision' : item.statusLabel,
+            style: AppText.caption,
           ),
-          const SizedBox(height: AppSpacing.md),
-          const _LineItem(label: 'Kitchen & cabinetry', value: '₹4,20,000'),
-          const SizedBox(height: AppSpacing.sm),
-          const _LineItem(label: 'Living & bedrooms', value: '₹3,30,000'),
-          const SizedBox(height: AppSpacing.sm),
-          const _LineItem(label: 'Installation & finishes', value: '₹90,000'),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: context.s(8)),
+          const FigText('₹8,40,000', style: AppText.display),
+          SizedBox(height: context.s(4)),
+          const FigText(
+            'Total, including applicable taxes',
+            style: AppText.caption,
+          ),
+          SizedBox(height: context.s(28)),
+          const FigText('Scope', style: AppText.screenTitle),
+          SizedBox(height: context.s(4)),
+          const _AmountRow(label: 'Kitchen & cabinetry', value: '₹4,20,000'),
           const Divider(height: 1, color: AppColors.line),
-          const SizedBox(height: AppSpacing.md),
-          const _LineItem(
-            label: 'Total incl. applicable taxes',
-            value: '₹8,40,000',
+          const _AmountRow(label: 'Living & bedrooms', value: '₹3,30,000'),
+          const Divider(height: 1, color: AppColors.line),
+          const _AmountRow(
+            label: 'Installation & finishes',
+            value: '₹90,000',
           ),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Payment milestones', style: AppText.title),
-          const SizedBox(height: AppSpacing.sm),
-          FigText(
-            '40% on confirmation · 40% before installation · 20% on handover.',
-            style: AppText.body,
-            color: AppColors.muted,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          RakButton(
-            label: 'Read complete quotation',
-            style: RakButtonStyle.secondary,
-            onPressed: () => context.push(
-              '/projects/$projectId/documents',
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
+          const Divider(height: 1, color: AppColors.line),
+          SizedBox(height: context.s(28)),
+          const FigText('Payment', style: AppText.screenTitle),
+          SizedBox(height: context.s(4)),
+          const _AmountRow(label: 'On confirmation', value: '40%'),
+          const Divider(height: 1, color: AppColors.line),
+          const _AmountRow(label: 'Before installation', value: '40%'),
+          const Divider(height: 1, color: AppColors.line),
+          const _AmountRow(label: 'On handover', value: '20%'),
+          const Divider(height: 1, color: AppColors.line),
+          SizedBox(height: context.s(20)),
+          const FigText(
             'Approving this version confirms its scope and price. Payment is collected by RAK after you approve.',
             style: AppText.caption,
           ),
+          SizedBox(height: context.s(8)),
+          _QuietLink(
+            title: 'Read complete quotation',
+            detail: 'Published with your project documents',
+            onTap: () => context.push('/projects/$projectId/documents'),
+          ),
+          const Divider(height: 1, color: AppColors.line),
+          if (item.version > 1) ...[
+            _QuietLink(
+              title: 'View version ${item.version - 1}',
+              detail: 'Closed. A decision here does not apply.',
+              onTap: () => context.push(
+                '/projects/$projectId/review/quotation/closed',
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.line),
+          ],
         ],
       ),
     );
@@ -155,56 +231,85 @@ class DesignReviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final item = sl<ApprovalBook>().current(projectId, 'design');
+    if (item == null) {
+      return RakPage(
+        title: 'Review design',
+        subtitle: 'Not published',
+        onBack: () => context.pop(),
+        child: const AppEmptyState(
+          title: 'No design to review',
+          message: 'This project does not have a published design yet.',
+          icon: Icons.architecture_outlined,
+        ),
+      );
+    }
+    final open = item.status == ApprovalStatus.pending;
     return RakPage(
-      title: 'Review design',
-      subtitle: 'Living room · Version 3',
+      title: 'Living room',
+      subtitle: 'Version ${item.version}',
       onBack: () => context.pop(),
-      bottomBar: _DecisionBar(
-        onReject: () =>
-            context.push('/projects/$projectId/review/design/reject'),
-        onApprove: () =>
-            context.push('/projects/$projectId/review/design/approve'),
-      ),
+      bottomBar: open
+          ? _QuoteDecisionBar(
+              onReject: () =>
+                  context.push('/projects/$projectId/review/design/reject'),
+              onApprove: () =>
+                  context.push('/projects/$projectId/review/design/approve'),
+            )
+          : null,
       child: ListView(
         padding: context.figPagePadding,
         children: [
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: RakStatusBanner(text: 'Awaiting your decision'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const RakPhoto(
-            asset: 'assets/photos/living_room_design.png',
-            height: 180,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Living room', style: AppText.screenTitle),
-          const SizedBox(height: AppSpacing.sm),
-          FigText('What changed in version 3', style: AppText.title),
-          const SizedBox(height: AppSpacing.sm),
           FigText(
-            'Wider walkway beside the sofa.\nTV storage revised to a warm oak finish.',
-            style: AppText.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const _LineItem(
-            label: 'Shared by',
-            value: 'RAK design team',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const _LineItem(label: 'Updated', value: '15 Sep 2026'),
-          const SizedBox(height: AppSpacing.md),
-          RakButton(
-            label: 'Open full design',
-            style: RakButtonStyle.secondary,
-            onPressed: () =>
-                context.push('/projects/$projectId/review/design/full'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
-            'Review the layout and finishes. Use Reject to explain what needs to change.',
+            open ? 'Awaiting your decision' : item.statusLabel,
             style: AppText.caption,
           ),
+          SizedBox(height: context.s(10)),
+          InkWell(
+            onTap: () =>
+                context.push('/projects/$projectId/review/design/full'),
+            child: const RakPhoto(
+              asset: 'assets/photos/living_room_design.png',
+              height: 240,
+            ),
+          ),
+          SizedBox(height: context.s(22)),
+          FigText(
+            'What changed in version ${item.version}',
+            style: AppText.screenTitle,
+          ),
+          SizedBox(height: context.s(4)),
+          const _AmountRow(
+            label: 'Walkway',
+            value: 'Wider beside the sofa',
+          ),
+          const Divider(height: 1, color: AppColors.line),
+          const _AmountRow(
+            label: 'TV storage',
+            value: 'Warm oak finish',
+          ),
+          const Divider(height: 1, color: AppColors.line),
+          const _AmountRow(label: 'Shared by', value: 'RAK design team'),
+          const Divider(height: 1, color: AppColors.line),
+          const _AmountRow(label: 'Updated', value: '15 Sep 2026'),
+          const Divider(height: 1, color: AppColors.line),
+          SizedBox(height: context.s(8)),
+          _QuietLink(
+            title: 'Open full design',
+            detail: 'The drawing, larger',
+            onTap: () =>
+                context.push('/projects/$projectId/review/design/full'),
+          ),
+          const Divider(height: 1, color: AppColors.line),
+          if (item.version > 1) ...[
+            _QuietLink(
+              title: 'View version ${item.version - 1}',
+              detail: 'Closed. A decision here does not apply.',
+              onTap: () =>
+                  context.push('/projects/$projectId/review/design/closed'),
+            ),
+            const Divider(height: 1, color: AppColors.line),
+          ],
         ],
       ),
     );
@@ -219,31 +324,33 @@ class DesignFullViewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RakPage(
-      title: 'Living room · v3',
-      subtitle: 'Awaiting your decision',
+      title: 'Living room',
+      subtitle: 'Version 3',
       onBack: () => context.pop(),
       child: ListView(
         padding: context.figPagePadding,
         children: [
           const RakPhoto(
             asset: 'assets/photos/living_room_design.png',
-            height: 290,
+            height: 320,
           ),
-          const SizedBox(height: AppSpacing.md),
-          const RakStatusBanner(text: 'Revised design · 15 Sep 2026'),
-          const SizedBox(height: AppSpacing.md),
-          FigText('Natural textures. Room to breathe.', style: AppText.title),
-          const SizedBox(height: AppSpacing.sm),
-          FigText(
-            'Living room · Natural oak, warm neutrals and fitted storage.',
+          SizedBox(height: context.s(16)),
+          const FigText(
+            'Natural textures. Room to breathe.',
+            style: AppText.screenTitle,
+          ),
+          SizedBox(height: context.s(4)),
+          const FigText(
+            'Natural oak, warm neutrals and fitted storage.',
             style: AppText.body,
-            color: AppColors.muted,
           ),
-          const SizedBox(height: AppSpacing.md),
-          RakButton(
-            label: 'Ask a question',
-            style: RakButtonStyle.secondary,
-            onPressed: () {
+          SizedBox(height: context.s(4)),
+          const FigText('Revised 15 Sep 2026', style: AppText.caption),
+          SizedBox(height: context.s(12)),
+          _QuietLink(
+            title: 'Ask a question',
+            detail: 'About this living room',
+            onTap: () {
               final uri = Uri(
                 path: '/support',
                 queryParameters: {
@@ -255,19 +362,20 @@ class DesignFullViewPage extends StatelessWidget {
               context.go(uri.toString());
             },
           ),
-          const SizedBox(height: AppSpacing.sm),
-          RakButton(
-            label: 'Approved designs',
-            style: RakButtonStyle.secondary,
-            onPressed: () => context.push('/projects/$projectId/designs'),
+          const Divider(height: 1, color: AppColors.line),
+          _QuietLink(
+            title: 'Approved designs',
+            detail: 'Drawings already ready to build',
+            onTap: () => context.push('/projects/$projectId/designs'),
           ),
+          const Divider(height: 1, color: AppColors.line),
         ],
       ),
     );
   }
 }
 
-class ConfirmApprovalPage extends StatelessWidget {
+class ConfirmApprovalPage extends StatefulWidget {
   const ConfirmApprovalPage({
     super.key,
     required this.projectId,
@@ -277,20 +385,52 @@ class ConfirmApprovalPage extends StatelessWidget {
   final String projectId;
   final String kind;
 
-  bool get _quotation => kind == 'quotation';
+  @override
+  State<ConfirmApprovalPage> createState() => _ConfirmApprovalPageState();
+}
+
+class _ConfirmApprovalPageState extends State<ConfirmApprovalPage> {
+  final _note = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final quotation = widget.kind == 'quotation';
+    final current = sl<ApprovalBook>().current(widget.projectId, widget.kind);
     return RakPage(
-      title: _quotation ? 'Approve quotation?' : 'Approve design?',
-      subtitle: _quotation ? 'QT-024 · Version 4' : 'Living room · Version 3',
+      title: quotation ? 'Approve quotation?' : 'Approve design?',
+      subtitle: current == null
+          ? 'Not published'
+          : 'Version ${current.version}',
       onBack: () => context.pop(),
       bottomBar: _FixedBar(
         child: RakButton(
           label: 'Confirm approval',
-          onPressed: () => context.go(
-            '/projects/$projectId/review/$kind/approved',
-          ),
+          onPressed: current == null ||
+                  current.status != ApprovalStatus.pending
+              ? null
+              : () {
+                  final error = sl<ApprovalBook>().decide(
+                    projectId: widget.projectId,
+                    kind: widget.kind,
+                    version: current.version,
+                    approved: true,
+                    comment: _note.text,
+                  );
+                  if (error != null) {
+                    setState(() => _error = error);
+                    return;
+                  }
+                  context.go(
+                    '/projects/${widget.projectId}/review/${widget.kind}/approved',
+                  );
+                },
         ),
       ),
       child: ListView(
@@ -302,23 +442,25 @@ class ConfirmApprovalPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           FigText(
-            _quotation ? 'Total · ₹8,40,000' : 'Living room · revised layout',
+            quotation ? 'Total · ₹8,40,000' : 'Living room · revised layout',
             style: AppText.screenTitle,
           ),
           const SizedBox(height: AppSpacing.sm),
           FigText(
-            'You are approving this exact version. Your RAK team will be notified and will proceed with this scope.',
+            'You are approving version ${current?.version ?? '—'}. An older version cannot be approved in its place.',
             style: AppText.body,
           ),
           const SizedBox(height: AppSpacing.md),
           FigText('Note to your team (optional)', style: AppText.caption),
           const SizedBox(height: AppSpacing.xs),
-          const TextField(decoration: InputDecoration(hintText: 'Add a note')),
-          const SizedBox(height: AppSpacing.md),
-          FigText(
-            'Need a change? Go back and choose Reject to tell the team what to revise.',
-            style: AppText.caption,
+          TextField(
+            controller: _note,
+            decoration: const InputDecoration(hintText: 'Add a note'),
           ),
+          if (_error != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            FigText(_error!, style: AppText.body, color: AppColors.error),
+          ],
           const SizedBox(height: AppSpacing.md),
           RakButton(
             label: 'Go back',
@@ -347,6 +489,7 @@ class RejectDecisionPage extends StatefulWidget {
 
 class _RejectDecisionPageState extends State<RejectDecisionPage> {
   final _reason = TextEditingController();
+  String? _error;
 
   @override
   void dispose() {
@@ -366,9 +509,28 @@ class _RejectDecisionPageState extends State<RejectDecisionPage> {
           label: 'Submit rejection',
           onPressed: _reason.text.trim().isEmpty
               ? null
-              : () => context.go(
-                  '/projects/${widget.projectId}/review/${widget.kind}/rejected',
-                ),
+              : () {
+                  final current = sl<ApprovalBook>().current(
+                    widget.projectId,
+                    widget.kind,
+                  );
+                  final error = current == null
+                      ? 'Nothing has been published for review on this project.'
+                      : sl<ApprovalBook>().decide(
+                          projectId: widget.projectId,
+                          kind: widget.kind,
+                          version: current.version,
+                          approved: false,
+                          comment: _reason.text,
+                        );
+                  if (error != null) {
+                    setState(() => _error = error);
+                    return;
+                  }
+                  context.go(
+                    '/projects/${widget.projectId}/review/${widget.kind}/rejected',
+                  );
+                },
         ),
       ),
       child: ListView(
@@ -401,6 +563,10 @@ class _RejectDecisionPageState extends State<RejectDecisionPage> {
             style: AppText.body,
             color: AppColors.muted,
           ),
+          if (_error != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            FigText(_error!, style: AppText.body, color: AppColors.error),
+          ],
           const SizedBox(height: AppSpacing.md),
           RakButton(
             label: 'Keep reviewing',
@@ -468,93 +634,137 @@ class DecisionResultPage extends StatelessWidget {
   }
 }
 
-class _ApprovalCard extends StatelessWidget {
-  const _ApprovalCard({
+class _QuietLink extends StatelessWidget {
+  const _QuietLink({
     required this.title,
     required this.detail,
-    required this.action,
-    required this.onPressed,
+    required this.onTap,
   });
 
   final String title;
   final String detail;
-  final String action;
-  final VoidCallback onPressed;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(context.s(16)),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(context.s(AppRadii.banner)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FigText(title, style: AppText.title),
-          SizedBox(height: context.s(12)),
-          FigText(detail, style: AppText.body, color: AppColors.muted),
-          SizedBox(height: context.s(12)),
-          RakButton(
-            label: action,
-            style: RakButtonStyle.secondary,
-            onPressed: onPressed,
-          ),
-        ],
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.s(16)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FigText(title, style: AppText.label),
+                  SizedBox(height: context.s(2)),
+                  FigText(detail, style: AppText.caption),
+                ],
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: context.s(14),
+              color: AppColors.muted,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _LineItem extends StatelessWidget {
-  const _LineItem({required this.label, required this.value});
+class _AmountRow extends StatelessWidget {
+  const _AmountRow({required this.label, required this.value});
 
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: FigText(label, style: AppText.body, color: AppColors.muted),
-        ),
-        Expanded(
-          child: FigText(
-            value,
-            style: AppText.label,
-            textAlign: TextAlign.right,
-          ),
-        ),
-      ],
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: context.s(14)),
+      child: Row(
+        children: [
+          Expanded(child: FigText(label, style: AppText.label)),
+          SizedBox(width: context.s(12)),
+          FigText(value, style: AppText.label),
+        ],
+      ),
     );
   }
 }
 
-class _DecisionBar extends StatelessWidget {
-  const _DecisionBar({required this.onReject, required this.onApprove});
+class _QuoteDecisionBar extends StatelessWidget {
+  const _QuoteDecisionBar({required this.onReject, required this.onApprove});
 
   final VoidCallback onReject;
   final VoidCallback onApprove;
 
   @override
   Widget build(BuildContext context) {
-    return _FixedBar(
-      child: Row(
-        children: [
-          Expanded(
-            child: RakButton(
-              label: 'Reject',
-              style: RakButtonStyle.secondary,
-              onPressed: onReject,
-            ),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.canvas,
+        border: Border(top: BorderSide(color: AppColors.line)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            context.s(24),
+            context.s(12),
+            context.s(24),
+            context.s(4),
           ),
-          SizedBox(width: context.s(12)),
-          Expanded(
-            child: RakButton(label: 'Approve', onPressed: onApprove),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RakButton(label: 'Approve', onPressed: onApprove),
+              TextButton(onPressed: onReject, child: const Text('Reject')),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ClosedApprovalPage extends StatelessWidget {
+  const ClosedApprovalPage({
+    super.key,
+    required this.projectId,
+    required this.kind,
+    required this.version,
+  });
+
+  final String projectId;
+  final String kind;
+  final int version;
+
+  @override
+  Widget build(BuildContext context) {
+    final latest = sl<ApprovalBook>().current(projectId, kind);
+    return RakPage(
+      title: 'Version $version',
+      subtitle: 'This version is closed',
+      onBack: () => context.pop(),
+      child: ListView(
+        padding: context.figPagePadding,
+        children: [
+          const RakStatusBanner(text: 'Outdated version'),
+          const SizedBox(height: AppSpacing.md),
+          FigText(
+            latest == null
+                ? 'There is no current version to review.'
+                : 'A decision on version $version does not approve version ${latest.version}. Review the latest version to record a decision.',
+            style: AppText.body,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          RakButton(
+            label: latest == null ? 'Back' : 'Review version ${latest.version}',
+            onPressed: () => context.pop(),
           ),
         ],
       ),

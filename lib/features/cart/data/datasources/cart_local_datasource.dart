@@ -11,7 +11,23 @@ class CartLocalDatasource {
   final AppDatabase _db;
   final Uuid _uuid;
 
+  Stream<int> watchItemCount({String? accountId}) {
+    final cartId = accountId == null || accountId.isEmpty
+        ? SeedData.guestCartId
+        : 'cart_$accountId';
+    return (_db.select(
+      _db.cartItems,
+    )..where((row) => row.cartId.equals(cartId))).watch().map((rows) {
+      var count = 0;
+      for (final row in rows) {
+        count += row.quantity;
+      }
+      return count;
+    });
+  }
+
   Future<ShoppingCart> getOrCreate({String? accountId}) async {
+    await mergeGuestInto(accountId);
     final cartRow = await _cartRow(accountId);
     return _toCart(cartRow);
   }
@@ -30,6 +46,7 @@ class CartLocalDatasource {
       throw const ValidationFailure('This item is available by quote only.');
     }
 
+    await mergeGuestInto(accountId);
     final cart = await _cartRow(accountId);
     final existing =
         await (_db.select(_db.cartItems)..where(
@@ -81,6 +98,42 @@ class CartLocalDatasource {
     return getOrCreate(accountId: accountId);
   }
 
+  Future<void> mergeGuestInto(String? accountId) async {
+    if (accountId == null || accountId.isEmpty) return;
+    final guestItems = await (_db.select(
+      _db.cartItems,
+    )..where((t) => t.cartId.equals(SeedData.guestCartId))).get();
+    if (guestItems.isEmpty) return;
+
+    final account = await _cartRow(accountId);
+    for (final guest in guestItems) {
+      final existing =
+          await (_db.select(_db.cartItems)..where(
+                (t) =>
+                    t.cartId.equals(account.id) &
+                    t.productId.equals(guest.productId),
+              ))
+              .getSingleOrNull();
+      if (existing == null) {
+        await (_db.update(_db.cartItems)..where((t) => t.id.equals(guest.id)))
+            .write(CartItemsCompanion(cartId: Value(account.id)));
+      } else {
+        await (_db.update(
+          _db.cartItems,
+        )..where((t) => t.id.equals(existing.id))).write(
+          CartItemsCompanion(
+            quantity: Value(existing.quantity + guest.quantity),
+          ),
+        );
+        await (_db.delete(
+          _db.cartItems,
+        )..where((t) => t.id.equals(guest.id))).go();
+      }
+    }
+    await _recomputeTotal(account.id, guestItems.first.currency);
+    await _recomputeTotal(SeedData.guestCartId, guestItems.first.currency);
+  }
+
   Future<CartRow> _cartRow(String? accountId) async {
     if (accountId == null) {
       return (_db.select(
@@ -130,12 +183,14 @@ class CartLocalDatasource {
     )..where((t) => t.cartId.equals(cart.id))).get();
     final productIds = lines.map((line) => line.productId).toSet();
     final hints = <String, String>{};
+    final modes = <String, String>{};
     if (productIds.isNotEmpty) {
       final products = await (_db.select(
         _db.products,
       )..where((t) => t.id.isIn(productIds))).get();
       for (final product in products) {
         hints[product.id] = product.imageHint;
+        modes[product.id] = product.salesMode;
       }
     }
     return ShoppingCart(
@@ -155,6 +210,7 @@ class CartLocalDatasource {
               unavailable: line.unavailable,
               repriced: line.repriced,
               imageHint: hints[line.productId] ?? 'placeholder',
+              salesMode: modes[line.productId] ?? 'fixed_price',
             ),
           )
           .toList(),

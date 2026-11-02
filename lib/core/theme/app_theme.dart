@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_radii.dart';
 import 'package:rak_customer/core/theme/app_text.dart';
 
 class AppTheme {
+  /// Black status-bar icons on the warm canvas.
+  static const SystemUiOverlayStyle statusBar = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+    systemNavigationBarColor: AppColors.canvas,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  );
+
   static TextTheme _textTheme() {
     return const TextTheme(
       displaySmall: AppText.display,
       headlineSmall: AppText.heading,
+      titleLarge: AppText.screenTitle,
       titleMedium: AppText.title,
       titleSmall: AppText.label,
       labelLarge: AppText.label,
@@ -55,6 +66,7 @@ class AppTheme {
         foregroundColor: AppColors.ink,
         elevation: 0,
         scrolledUnderElevation: 0,
+        systemOverlayStyle: statusBar,
         centerTitle: false,
         titleTextStyle: textTheme.headlineSmall,
       ),
@@ -64,7 +76,6 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.card),
-          side: const BorderSide(color: AppColors.line),
         ),
       ),
       dividerColor: AppColors.line,
@@ -103,23 +114,26 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding: const EdgeInsets.all(16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         hintStyle: AppText.body.copyWith(color: AppColors.muted),
         labelStyle: AppText.caption,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          borderSide: const BorderSide(color: AppColors.line),
+          borderRadius: BorderRadius.circular(AppRadii.button),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          borderSide: const BorderSide(color: AppColors.line),
+          borderRadius: BorderRadius.circular(AppRadii.button),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.card),
+          borderRadius: BorderRadius.circular(AppRadii.button),
           borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadii.card),
+          borderRadius: BorderRadius.circular(AppRadii.button),
           borderSide: const BorderSide(color: AppColors.error),
         ),
       ),
@@ -129,15 +143,27 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surface,
-        selectedColor: AppColors.soft,
+        selectedColor: AppColors.accent,
         labelStyle: AppText.label,
-        side: const BorderSide(color: AppColors.line),
+        secondaryLabelStyle: AppText.label.copyWith(color: AppColors.onPrimary),
+        side: BorderSide.none,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.button),
         ),
       ),
     );
   }
+}
+
+class AppDecorations {
+  static List<BoxShadow> get card => const [
+    BoxShadow(color: Color(0x14000000), blurRadius: 24, offset: Offset(0, 10)),
+  ];
+
+  /// Lighter lift used on the project screens.
+  static List<BoxShadow> get cardSoft => const [
+    BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+  ];
 }
 
 class _FadePageTransitionsBuilder extends PageTransitionsBuilder {

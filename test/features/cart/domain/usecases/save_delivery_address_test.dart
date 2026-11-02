@@ -44,6 +44,26 @@ void main() {
     );
   });
 
+  test('rejects a PIN outside the demo delivery area', () async {
+    final result = await usecase(
+      accountId: 'acc',
+      fullName: 'Rahul Nair',
+      mobile: '+919876540002',
+      line: '12 Palm Street',
+      postcode: '110001',
+    );
+    expect(result.failureOrNull, isA<ValidationFailure>());
+    verifyNever(
+      () => repository.saveAddress(
+        accountId: any(named: 'accountId'),
+        fullName: any(named: 'fullName'),
+        mobile: any(named: 'mobile'),
+        line: any(named: 'line'),
+        postcode: any(named: 'postcode'),
+      ),
+    );
+  });
+
   test('saves a complete address through the repository', () async {
     when(
       () => repository.saveAddress(

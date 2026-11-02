@@ -4,6 +4,7 @@ import 'package:rak_customer/core/theme/app_layout.dart';
 import 'package:rak_customer/core/theme/app_radii.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_text.dart';
+import 'package:rak_customer/core/theme/app_theme.dart';
 
 class RakInfoCard extends StatelessWidget {
   const RakInfoCard({
@@ -11,44 +12,51 @@ class RakInfoCard extends StatelessWidget {
     required this.title,
     required this.detail,
     this.onTap,
+    this.shadow,
   });
 
   final String title;
   final String detail;
   final VoidCallback? onTap;
+  final List<BoxShadow>? shadow;
 
   @override
   Widget build(BuildContext context) {
     final radius = context.s(AppRadii.card);
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
+    return DecoratedBox(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
-        side: const BorderSide(color: AppColors.line),
+        boxShadow: shadow ?? AppDecorations.card,
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(radius),
-        splashColor: AppColors.accent.withValues(alpha: 0.10),
-        highlightColor: AppColors.accent.withValues(alpha: 0.05),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: context.s(AppLayout.infoCardMinHeight),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(context.s(16)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppText.title.fig(context)),
-                SizedBox(height: context.s(8)),
-                Text(
-                  detail,
-                  style: AppText.body
-                      .fig(context)
-                      .copyWith(color: AppColors.muted),
-                ),
-              ],
+      child: Material(
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(radius),
+          splashColor: AppColors.accent.withValues(alpha: 0.10),
+          highlightColor: AppColors.accent.withValues(alpha: 0.05),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: context.s(AppLayout.infoCardMinHeight),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(context.s(16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppText.title.fig(context)),
+                  SizedBox(height: context.s(8)),
+                  Text(
+                    detail,
+                    style: AppText.body
+                        .fig(context)
+                        .copyWith(color: AppColors.muted),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

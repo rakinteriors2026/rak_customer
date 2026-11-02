@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rak_customer/core/di/injection.dart';
 import 'package:rak_customer/core/domain/clock.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
+import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
+import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/features/finance/domain/entities/project_finance.dart';
 import 'package:rak_customer/features/finance/domain/usecases/get_project_finance.dart';
 import 'package:rak_customer/features/finance/presentation/cubit/finance_cubit.dart';
@@ -11,6 +13,7 @@ import 'package:rak_customer/shared/formatters/date_formatter.dart';
 import 'package:rak_customer/shared/formatters/money_formatter.dart';
 import 'package:rak_customer/shared/widgets/app_empty_state.dart';
 import 'package:rak_customer/shared/widgets/app_error_state.dart';
+import 'package:rak_customer/shared/widgets/fig_text.dart';
 
 class ProjectFinanceSection extends StatelessWidget {
   const ProjectFinanceSection({
@@ -92,95 +95,135 @@ class FinanceLedgerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final asOf = DateFormatter.displayDate(finance.asOf);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Figure(
-                  label: 'Total contract value',
-                  value: MoneyFormatter.format(finance.totalContract),
-                ),
-                _Figure(
-                  label: 'Approved variations',
-                  value: MoneyFormatter.format(finance.approvedVariations),
-                ),
-                _Figure(
-                  label: 'Net received',
-                  value: MoneyFormatter.format(finance.netReceived),
-                ),
-                _Figure(
-                  label: 'Outstanding total',
-                  value: MoneyFormatter.format(finance.outstandingTotal),
-                ),
-                _Figure(
-                  label: 'Amount currently due',
-                  value: MoneyFormatter.format(finance.amountCurrentlyDue),
-                ),
-                if (finance.hasCredit)
-                  _Figure(
-                    label: 'Credit / overpayment',
-                    value: MoneyFormatter.format(finance.creditOverpayment),
-                  ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  stale
-                      ? 'Figures as of ${DateFormatter.displayDate(finance.asOf)} — may be out of date'
-                      : 'Figures as of ${DateFormatter.displayDate(finance.asOf)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: stale ? AppColors.warning : AppColors.inkMuted,
-                  ),
-                ),
-              ],
+        const FigText('Due now', style: AppText.caption),
+        SizedBox(height: context.s(4)),
+        FigText(
+          MoneyFormatter.format(finance.amountCurrentlyDue),
+          style: AppText.display,
+        ),
+        SizedBox(height: context.s(18)),
+        _MoneyLine(
+          label: 'Outstanding total',
+          value: MoneyFormatter.format(finance.outstandingTotal),
+          emphasis: true,
+        ),
+        const Divider(height: 1, color: AppColors.line),
+        _MoneyLine(
+          label: 'Total contract value',
+          value: MoneyFormatter.format(finance.totalContract),
+        ),
+        const Divider(height: 1, color: AppColors.line),
+        _MoneyLine(
+          label: 'Approved variations',
+          value: MoneyFormatter.format(finance.approvedVariations),
+        ),
+        const Divider(height: 1, color: AppColors.line),
+        _MoneyLine(
+          label: 'Net received',
+          value: MoneyFormatter.format(finance.netReceived),
+        ),
+        if (finance.hasCredit) ...[
+          const Divider(height: 1, color: AppColors.line),
+          _MoneyLine(
+            label: 'Credit / overpayment',
+            value: MoneyFormatter.format(finance.creditOverpayment),
+          ),
+        ],
+        SizedBox(height: context.s(14)),
+        FigText(
+          stale
+              ? 'Figures as of $asOf — may be out of date'
+              : 'Figures as of $asOf',
+          style: AppText.caption,
+          color: stale ? AppColors.warning : null,
+        ),
+        SizedBox(height: context.s(4)),
+        const FigText(
+          'Payments made outside the app appear here after finance publishes them.',
+          style: AppText.caption,
+        ),
+        if (finance.entries.isNotEmpty) ...[
+          SizedBox(height: context.s(28)),
+          const FigText('Ledger', style: AppText.screenTitle),
+          SizedBox(height: context.s(4)),
+          for (final entry in finance.entries) ...[
+            _MoneyLine(
+              label: entry.description,
+              value: MoneyFormatter.format(entry.amount),
+              caption:
+                  '${entry.isReversed ? 'Reversed' : 'Posted'} · ${DateFormatter.displayDate(entry.postedAt)}',
+              muted: entry.isReversed,
             ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text('Ledger', style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: AppSpacing.xs),
-        ...finance.entries.map(
-          (entry) => ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(entry.description),
-            subtitle: Text(
-              '${entry.isReversed ? 'Reversed' : 'Posted'} · ${DateFormatter.displayDate(entry.postedAt)}',
+            const Divider(height: 1, color: AppColors.line),
+          ],
+        ],
+        if (finance.dueSchedule.isNotEmpty) ...[
+          SizedBox(height: context.s(28)),
+          const FigText('Due schedule', style: AppText.screenTitle),
+          SizedBox(height: context.s(4)),
+          for (final item in finance.dueSchedule) ...[
+            _MoneyLine(
+              label: item.label,
+              value: MoneyFormatter.format(item.amount),
+              caption: 'Due ${DateFormatter.displayDate(item.dueAt)}',
             ),
-            trailing: Text(MoneyFormatter.format(entry.amount)),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text('Due schedule', style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: AppSpacing.xs),
-        ...finance.dueSchedule.map(
-          (item) => ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(item.label),
-            subtitle: Text('Due ${DateFormatter.displayDate(item.dueAt)}'),
-            trailing: Text(MoneyFormatter.format(item.amount)),
-          ),
-        ),
+            const Divider(height: 1, color: AppColors.line),
+          ],
+        ],
       ],
     );
   }
 }
 
-class _Figure extends StatelessWidget {
-  const _Figure({required this.label, required this.value});
+class _MoneyLine extends StatelessWidget {
+  const _MoneyLine({
+    required this.label,
+    required this.value,
+    this.caption,
+    this.muted = false,
+    this.emphasis = false,
+  });
+
   final String label;
   final String value;
+  final String? caption;
+  final bool muted;
+  final bool emphasis;
 
   @override
   Widget build(BuildContext context) {
+    final color = muted ? AppColors.muted : AppColors.ink;
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      padding: EdgeInsets.symmetric(vertical: context.s(12)),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(label)),
-          Text(value, style: Theme.of(context).textTheme.titleSmall),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FigText(label, style: AppText.label, color: color),
+                if (caption != null) ...[
+                  SizedBox(height: context.s(2)),
+                  FigText(caption!, style: AppText.caption),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(width: context.s(12)),
+          FigText(
+            value,
+            style: muted
+                ? AppText.label.copyWith(decoration: TextDecoration.lineThrough)
+                : emphasis
+                ? AppText.screenTitle
+                : AppText.label,
+            color: color,
+          ),
         ],
       ),
     );

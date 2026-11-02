@@ -39,13 +39,36 @@ class ProductArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bounded =
+            constraints.hasBoundedWidth && constraints.hasBoundedHeight;
+        if (!bounded) return _picture();
+        return ColoredBox(
+          color: AppColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: ClipOval(child: _picture(cover: true)),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _picture({bool cover = false}) {
     final asset = assetFor(imageHint);
+    final imageFit = cover ? BoxFit.cover : fit;
     if (_isRaster(asset)) {
       return Image.asset(
         asset,
-        width: width,
-        height: height,
-        fit: fit,
+        width: cover ? null : width,
+        height: cover ? null : height,
+        fit: imageFit,
         alignment: Alignment.center,
         errorBuilder: (context, error, stackTrace) =>
             _ArtworkFallback(width: width, height: height),

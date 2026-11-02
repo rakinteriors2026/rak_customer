@@ -1,14 +1,22 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rak_customer/core/di/injection.dart';
+import 'package:rak_customer/core/theme/app_colors.dart';
+import 'package:rak_customer/core/theme/app_radii.dart';
+import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
+import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/features/documents/domain/entities/project_document.dart';
 import 'package:rak_customer/features/documents/domain/usecases/get_project_documents.dart';
 import 'package:rak_customer/features/documents/presentation/cubit/documents_cubit.dart';
+import 'package:rak_customer/features/documents/presentation/document_preview.dart';
 import 'package:rak_customer/features/documents/presentation/pages/document_viewer_page.dart';
 import 'package:rak_customer/shared/formatters/date_formatter.dart';
 import 'package:rak_customer/shared/widgets/app_empty_state.dart';
 import 'package:rak_customer/shared/widgets/app_error_state.dart';
+import 'package:rak_customer/shared/widgets/fig_text.dart';
+import 'package:rak_customer/shared/widgets/rak_photo.dart';
 
 class ProjectDocumentsSection extends StatelessWidget {
   const ProjectDocumentsSection({
@@ -108,34 +116,36 @@ class DocumentsGroupedList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const RakPhoto(asset: 'assets/photos/hero_home.png', height: 168),
+        SizedBox(height: context.s(10)),
+        const FigText(
+          'Published for this home. Nothing here is saved on the phone.',
+          style: AppText.caption,
+        ),
         for (final type in groups) ...[
-          Text(_labelFor(type), style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: AppSpacing.xs),
-          ...documents
-              .where((d) => d.type == type)
-              .map(
-                (doc) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.picture_as_pdf_outlined),
-                  title: Text(doc.title),
-                  subtitle: Text(DateFormatter.displayDate(doc.createdAt)),
-                  onTap: () {
-                    if (onOpen != null) {
-                      onOpen!(doc);
-                      return;
-                    }
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => DocumentViewerPage(
-                          assetId: doc.assetId,
-                          title: doc.title,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: context.s(26)),
+          FigText(_labelFor(type), style: AppText.screenTitle),
+          SizedBox(height: context.s(4)),
+          for (final doc in documents.where((d) => d.type == type)) ...[
+            _DocumentRow(
+              document: doc,
+              onTap: () {
+                if (onOpen != null) {
+                  onOpen!(doc);
+                  return;
+                }
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => DocumentViewerPage(
+                      assetId: doc.assetId,
+                      title: doc.title,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const Divider(height: 1, color: AppColors.line),
+          ],
         ],
       ],
     );
@@ -147,4 +157,66 @@ class DocumentsGroupedList extends StatelessWidget {
     'invoice' => 'Invoices',
     _ => type,
   };
+}
+
+class _DocumentRow extends StatelessWidget {
+  const _DocumentRow({required this.document, required this.onTap});
+
+  final ProjectDocument document;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = DateFormatter.displayDate(document.createdAt);
+    final note = switch (document.type) {
+      'agreement' => 'Signed',
+      'quotation' => 'Scope and price',
+      'invoice' => 'Issued',
+      _ => document.typeLabel,
+    };
+    final size = context.s(64);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.s(12)),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(context.s(AppRadii.button)),
+              child: Image.asset(
+                documentPreviewAsset(
+                  type: document.type,
+                  assetId: document.assetId,
+                  title: document.title,
+                ),
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => ColoredBox(
+                  color: AppColors.sand,
+                  child: SizedBox(width: size, height: size),
+                ),
+              ),
+            ),
+            SizedBox(width: context.s(14)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FigText(document.title, style: AppText.label),
+                  SizedBox(height: context.s(2)),
+                  FigText('$note · $date', style: AppText.caption),
+                ],
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: context.s(14),
+              color: AppColors.muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

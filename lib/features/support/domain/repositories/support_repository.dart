@@ -18,4 +18,10 @@ abstract class SupportRepository {
     String? projectId,
     String? orderId,
   });
+
+  Future<Result<SupportQuery>> updateStatus({
+    required String accountId,
+    required String queryId,
+    required String status,
+  });
 }

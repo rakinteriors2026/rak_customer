@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rak_customer/core/di/injection.dart';
+import 'package:rak_customer/core/navigation/auth_return.dart';
 import 'package:rak_customer/core/domain/clock.dart';
 import 'package:rak_customer/core/domain/entities/otp_challenge.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
@@ -68,7 +69,8 @@ class _OtpEntryViewState extends State<_OtpEntryView> {
       listener: (context, state) {
         if (state is OtpEntrySuccess) {
           context.read<SessionCubit>().signedIn(state.account);
-          context.go('/home');
+          final from = AuthReturn.readFrom(GoRouterState.of(context).uri);
+          context.go(from ?? '/shop');
         }
       },
       buildWhen: (previous, current) {
@@ -86,10 +88,11 @@ class _OtpEntryViewState extends State<_OtpEntryView> {
             body: Center(child: CircularProgressIndicator()),
           );
         }
+        final from = AuthReturn.readFrom(GoRouterState.of(context).uri);
         return RakPage(
           title: 'Check your messages',
           subtitle: 'Secure sign-in',
-          onBack: () => context.go('/login'),
+          onBack: () => context.go(AuthReturn.loginLocation(from: from)),
           child: ListView(
             padding: context.figPagePadding,
             children: [
@@ -156,7 +159,8 @@ class _OtpEntryViewState extends State<_OtpEntryView> {
               RakButton(
                 label: 'Change mobile number',
                 style: RakButtonStyle.secondary,
-                onPressed: () => context.go('/login'),
+                onPressed: () =>
+                    context.go(AuthReturn.loginLocation(from: from)),
               ),
               const SizedBox(height: AppSpacing.md),
               const RakStatusBanner(

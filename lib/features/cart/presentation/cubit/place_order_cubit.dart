@@ -33,6 +33,7 @@ class PlaceOrderCubit extends Cubit<PlaceOrderState> {
   final String accountId;
 
   Future<void> submit() async {
+    if (state is PlaceOrderInProgress || state is PlaceOrderSuccess) return;
     emit(const PlaceOrderInProgress());
     final result = await _placeOrder(accountId: accountId);
     if (isClosed) return;

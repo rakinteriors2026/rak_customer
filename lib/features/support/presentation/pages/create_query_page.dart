@@ -1,15 +1,20 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rak_customer/core/di/injection.dart';
-import 'package:rak_customer/core/theme/app_spacing.dart';
+import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
+import 'package:rak_customer/core/theme/app_text.dart';
+import 'package:rak_customer/features/support/domain/entities/support_query.dart';
 import 'package:rak_customer/features/support/domain/usecases/create_support_query.dart';
 import 'package:rak_customer/features/support/domain/usecases/get_support_contexts.dart';
 import 'package:rak_customer/features/support/presentation/cubit/create_query_cubit.dart';
 import 'package:rak_customer/shared/widgets/app_empty_state.dart';
 import 'package:rak_customer/shared/widgets/app_error_state.dart';
 import 'package:rak_customer/shared/widgets/app_loading.dart';
+import 'package:rak_customer/shared/widgets/fig_text.dart';
+import 'package:rak_customer/shared/widgets/rak_button.dart';
 import 'package:rak_customer/shared/widgets/rak_page.dart';
 
 class CreateQueryPage extends StatelessWidget {
@@ -92,67 +97,63 @@ class _CreateQueryViewState extends State<_CreateQueryView> {
               ListView(
                 padding: context.figPagePadding,
                 children: [
-                  Text(
-                    'Related to',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Wrap(
-                    spacing: AppSpacing.xs,
-                    children: [
-                      for (final option in contexts.options)
-                        ChoiceChip(
-                          label: Text(option.label),
-                          selected:
-                              selected?.id == option.id &&
-                              selected?.kind == option.kind,
-                          onSelected: submitting
-                              ? null
-                              : (_) => context.read<CreateQueryCubit>().select(
-                                  option,
-                                ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
+                  const FigText('Related to', style: AppText.caption),
+                  SizedBox(height: context.s(4)),
+                  for (final option in contexts.options) ...[
+                    _ContextRow(
+                      option: option,
+                      selected:
+                          selected?.id == option.id &&
+                          selected?.kind == option.kind,
+                      onTap: submitting
+                          ? null
+                          : () => context.read<CreateQueryCubit>().select(
+                              option,
+                            ),
+                    ),
+                    const Divider(height: 1, color: AppColors.line),
+                  ],
+                  SizedBox(height: context.s(22)),
+                  const FigText('Subject', style: AppText.caption),
                   TextField(
                     controller: _subject,
                     enabled: !submitting,
-                    decoration: const InputDecoration(hintText: 'Subject'),
+                    style: AppText.body.fig(context),
+                    cursorColor: AppColors.ink,
+                    decoration: _line(context, hint: 'Kitchen installation'),
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: context.s(18)),
+                  const FigText('Question', style: AppText.caption),
                   TextField(
                     controller: _message,
                     enabled: !submitting,
-                    minLines: 4,
-                    maxLines: 8,
-                    decoration: const InputDecoration(
-                      hintText: 'Your question',
+                    minLines: 3,
+                    maxLines: 6,
+                    style: AppText.body.fig(context),
+                    cursorColor: AppColors.ink,
+                    decoration: _line(
+                      context,
+                      hint: 'When will the countertop installation begin?',
                     ),
                   ),
                   if (errorMessage != null) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
+                    SizedBox(height: context.s(12)),
+                    FigText(
                       errorMessage,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
+                      style: AppText.caption,
+                      color: AppColors.error,
                     ),
                   ],
-                  const SizedBox(height: AppSpacing.lg),
-                  FilledButton(
+                  SizedBox(height: context.s(24)),
+                  RakButton(
+                    label: submitting ? 'Sending…' : 'Send question',
+                    loading: submitting,
                     onPressed: submitting
                         ? null
                         : () => context.read<CreateQueryCubit>().submit(
                             subject: _subject.text,
                             message: _message.text,
                           ),
-                    child: Text(submitting ? 'Sending…' : 'Send question'),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Your question will be routed to the assigned consultant.',
-                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ),
@@ -161,4 +162,73 @@ class _CreateQueryViewState extends State<_CreateQueryView> {
       },
     );
   }
+}
+
+class _ContextRow extends StatelessWidget {
+  const _ContextRow({
+    required this.option,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final SupportContextOption option;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final kind = option.kind == SupportContextKind.project
+        ? 'Project'
+        : 'Order';
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.s(14)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FigText(
+                    option.label,
+                    style: AppText.label,
+                    color: selected ? AppColors.ink : AppColors.muted,
+                  ),
+                  SizedBox(height: context.s(2)),
+                  FigText(kind, style: AppText.caption),
+                ],
+              ),
+            ),
+            if (selected)
+              Icon(
+                CupertinoIcons.checkmark,
+                size: context.s(16),
+                color: AppColors.ink,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+InputDecoration _line(BuildContext context, {required String hint}) {
+  const idle = UnderlineInputBorder(
+    borderSide: BorderSide(color: AppColors.line),
+  );
+  const focus = UnderlineInputBorder(
+    borderSide: BorderSide(color: AppColors.ink),
+  );
+  return InputDecoration(
+    filled: false,
+    isDense: true,
+    hintText: hint,
+    hintStyle: AppText.body.fig(context).copyWith(color: AppColors.muted),
+    contentPadding: EdgeInsets.symmetric(vertical: context.s(12)),
+    border: idle,
+    enabledBorder: idle,
+    focusedBorder: focus,
+    disabledBorder: idle,
+  );
 }

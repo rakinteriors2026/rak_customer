@@ -1,9 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rak_customer/core/di/injection.dart';
+import 'package:rak_customer/core/navigation/auth_return.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
-import 'package:rak_customer/core/theme/app_radii.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_text.dart';
@@ -17,7 +18,6 @@ import 'package:rak_customer/shared/widgets/fig_text.dart';
 import 'package:rak_customer/shared/widgets/rak_brand_header.dart';
 import 'package:rak_customer/shared/widgets/rak_button.dart';
 import 'package:rak_customer/shared/widgets/rak_hero_room.dart';
-import 'package:rak_customer/shared/widgets/rak_info_card.dart';
 import 'package:rak_customer/shared/widgets/rak_page.dart';
 import 'package:rak_customer/shared/widgets/rak_progress_bar.dart';
 
@@ -32,6 +32,13 @@ class HomePage extends StatelessWidget {
     if (accountId == null) {
       return RakPage(
         header: const RakBrandHeader(),
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/account');
+          }
+        },
         child: ListView(
           padding: context.figPagePadding,
           children: [
@@ -51,7 +58,10 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             RakButton(
               label: 'Sign in',
-              onPressed: () => context.push('/login'),
+              onPressed: () =>
+                  context.push(
+                    AuthReturn.loginLocation(from: '/projects/overview'),
+                  ),
             ),
             const SizedBox(height: AppSpacing.sm),
             RakButton(
@@ -69,6 +79,13 @@ class HomePage extends StatelessWidget {
       child: RakPage(
         title: 'Welcome home, ${PhoneFormatter.firstName(displayName)}',
         subtitle: 'Your space. Your choices.',
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/account');
+          }
+        },
         child: _SignedInHome(accountId: accountId!),
       ),
     );
@@ -141,108 +158,110 @@ class _ProjectHome extends StatelessWidget {
       padding: context.figPagePadding,
       children: [
         const RakHeroRoom(art: RakHeroArt.home, editorial: true),
-        const SizedBox(height: AppSpacing.md),
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(context.s(16)),
-          decoration: BoxDecoration(
-            color: AppColors.sand,
-            borderRadius: BorderRadius.circular(context.s(AppRadii.banner)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FigText('Your review matters', style: AppText.bodyLarge),
-                    SizedBox(height: context.s(4)),
-                    FigText('1 quotation · 1 design', style: AppText.caption),
-                  ],
-                ),
+        const SizedBox(height: AppSpacing.lg),
+        FigText('Your project', style: AppText.caption, color: AppColors.muted),
+        SizedBox(height: context.s(4)),
+        GestureDetector(
+          onTap: () => context.go('/projects'),
+          behavior: HitTestBehavior.opaque,
+          child: FigText(project.name, style: AppText.heading),
+        ),
+        SizedBox(height: context.s(12)),
+        Row(
+          children: [
+            Expanded(
+              child: FigText(
+                project.phaseLabel,
+                style: AppText.body,
+                color: AppColors.muted,
               ),
-              SizedBox(width: context.s(12)),
-              RakButton(
-                label: 'Review →',
-                width: 108,
-                onPressed: () => context.push(
-                  '/projects/${project.id}/review',
-                  extra: project.name,
-                ),
-              ),
-            ],
+            ),
+            if (progress != null) FigText('$progress%', style: AppText.label),
+          ],
+        ),
+        SizedBox(height: context.s(8)),
+        RakProgressBar(value: progress == null ? 0 : progress / 100),
+        SizedBox(height: context.s(8)),
+        FigText(
+          handover == null
+              ? 'Handover date not yet available'
+              : 'Expected handover · ${DateFormatter.displayShort(handover)}',
+          style: AppText.caption,
+        ),
+        SizedBox(height: context.s(8)),
+        const Divider(height: 1, color: AppColors.line),
+        _QuietLink(
+          icon: CupertinoIcons.doc_text,
+          title: 'A review is waiting',
+          detail: '1 quotation · 1 design',
+          onTap: () => context.push(
+            '/projects/${project.id}/review',
+            extra: project.name,
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        Material(
-          color: AppColors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(context.s(AppRadii.banner)),
-            side: const BorderSide(color: AppColors.line),
+        const Divider(height: 1, color: AppColors.line),
+        _QuietLink(
+          icon: CupertinoIcons.photo,
+          title: 'Your kitchen is taking shape',
+          detail: 'New site update · Today, 10:30 AM',
+          onTap: () => context.push(
+            '/projects/${project.id}/updates',
+            extra: '/projects/overview',
           ),
-          child: InkWell(
-            onTap: () => context.go('/projects'),
-            borderRadius: BorderRadius.circular(context.s(AppRadii.banner)),
-            child: Padding(
-              padding: EdgeInsets.all(context.s(16)),
+        ),
+        const Divider(height: 1, color: AppColors.line),
+        _QuietLink(
+          icon: CupertinoIcons.lightbulb,
+          title: 'Ideas for your next space',
+          detail: 'Projects, finishes and materials',
+          onTap: () => context.push('/sales-kit'),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuietLink extends StatelessWidget {
+  const _QuietLink({
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: context.s(16)),
+        child: Row(
+          children: [
+            Icon(icon, size: context.s(18), color: AppColors.ink),
+            SizedBox(width: context.s(14)),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FigText(
-                    progress == null
-                        ? 'YOUR PROJECT'
-                        : 'YOUR PROJECT · $progress% COMPLETE',
-                    style: AppText.caption.copyWith(
-                      fontSize: 11,
-                      letterSpacing: 1,
-                    ),
-                    color: AppColors.accent,
-                  ),
-                  SizedBox(height: context.s(9)),
-                  FigText('${project.name}  →', style: AppText.title),
-                  SizedBox(height: context.s(9)),
-                  Row(
-                    children: [
-                      if (progress != null) ...[
-                        FigText(
-                          '$progress%',
-                          style: AppText.title,
-                          color: AppColors.accent,
-                        ),
-                        SizedBox(width: context.s(5)),
-                      ],
-                      FigText(project.phaseLabel, style: AppText.label),
-                    ],
-                  ),
-                  SizedBox(height: context.s(9)),
-                  RakProgressBar(value: progress == null ? 0 : progress / 100),
-                  SizedBox(height: context.s(9)),
-                  FigText(
-                    handover == null
-                        ? 'Handover date not yet available'
-                        : 'Expected handover · ${DateFormatter.displayShort(handover)}',
-                    style: AppText.caption,
-                  ),
+                  FigText(title, style: AppText.label),
+                  SizedBox(height: context.s(2)),
+                  FigText(detail, style: AppText.caption),
                 ],
               ),
             ),
-          ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: context.s(14),
+              color: AppColors.muted,
+            ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.md),
-        RakInfoCard(
-          title: 'Your kitchen is taking shape',
-          detail: 'New site update · Today, 10:30 AM',
-          onTap: () => context.push('/projects/${project.id}/updates'),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        RakButton(
-          label: 'Find something for your home',
-          style: RakButtonStyle.secondary,
-          onPressed: () => context.go('/shop'),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        const _SalesKitPromo(),
-      ],
+      ),
     );
   }
 }

@@ -42,10 +42,20 @@ class SupportLocalDatasource {
               ..where((t) => t.accountId.equals(accountId))
               ..orderBy([(t) => OrderingTerm.desc(t.sortCursor)]))
             .get();
+    final orders =
+        await (_db.select(_db.shopOrders)
+              ..where((t) => t.accountId.equals(accountId))
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+            .get();
     return SupportContexts(
       options: [
         for (final project in projects)
           SupportContextOption.project(id: project.id, label: project.name),
+        for (final order in orders)
+          SupportContextOption.order(
+            id: order.id,
+            label: 'Order ${order.id}',
+          ),
       ],
     );
   }
@@ -80,6 +90,17 @@ class SupportLocalDatasource {
       }
     }
 
+    if (hasOrder) {
+      final owned =
+          await (_db.select(_db.shopOrders)..where(
+                (t) => t.id.equals(orderId) & t.accountId.equals(accountId),
+              ))
+              .getSingleOrNull();
+      if (owned == null) {
+        throw const NotFoundFailure('This order is not available.');
+      }
+    }
+
     final now = _clock.now().toUtc();
     final id = 'qry_${now.microsecondsSinceEpoch}';
     await _db
@@ -98,6 +119,23 @@ class SupportLocalDatasource {
           ),
         );
     return getOwned(accountId: accountId, queryId: id);
+  }
+
+  Future<SupportQuery> updateStatus({
+    required String accountId,
+    required String queryId,
+    required String status,
+  }) async {
+    if (status != 'replied' && status != 'closed') {
+      throw const ValidationFailure('That question status is not available.');
+    }
+    final existing = await getOwned(accountId: accountId, queryId: queryId);
+    if (existing.status == 'closed') {
+      throw const ValidationFailure('This question is closed.');
+    }
+    await (_db.update(_db.supportQueries)..where((t) => t.id.equals(queryId)))
+        .write(SupportQueriesCompanion(status: Value(status)));
+    return getOwned(accountId: accountId, queryId: queryId);
   }
 
   SupportQuery _toQuery(SupportQueryRow row) {

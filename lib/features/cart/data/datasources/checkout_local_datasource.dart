@@ -54,7 +54,23 @@ class CheckoutLocalDatasource {
     return saved;
   }
 
+  bool _placing = false;
+
   Future<ShopOrder> placeOrder({required String accountId}) async {
+    if (_placing) {
+      throw const ValidationFailure(
+        'Payment confirmation is already in progress.',
+      );
+    }
+    _placing = true;
+    try {
+      return await _placeOrder(accountId: accountId);
+    } finally {
+      _placing = false;
+    }
+  }
+
+  Future<ShopOrder> _placeOrder({required String accountId}) async {
     final address = await getAddress(accountId);
     if (address == null) {
       throw const ValidationFailure(
@@ -181,6 +197,27 @@ class CheckoutLocalDatasource {
       currency: row.currency,
       createdAt: row.createdAt,
     );
+  }
+
+  Future<ShopOrder> updateStatus({
+    required String accountId,
+    required String orderId,
+    required String status,
+  }) async {
+    if (!ShopOrder.knownStatuses.contains(status)) {
+      throw const ValidationFailure('That order status is not available.');
+    }
+    final row =
+        await (_db.select(_db.shopOrders)..where(
+              (t) => t.id.equals(orderId) & t.accountId.equals(accountId),
+            ))
+            .getSingleOrNull();
+    if (row == null) {
+      throw const NotFoundFailure('This order is not available.');
+    }
+    await (_db.update(_db.shopOrders)..where((t) => t.id.equals(orderId)))
+        .write(ShopOrdersCompanion(status: Value(status)));
+    return getOrder(accountId: accountId, orderId: orderId);
   }
 
   Future<List<ShopOrder>> listOrders(String accountId) async {

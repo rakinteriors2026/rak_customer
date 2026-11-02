@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rak_customer/core/di/injection.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
+import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
+import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/features/designs/domain/entities/approved_design.dart';
 import 'package:rak_customer/features/designs/domain/usecases/get_approved_designs.dart';
 import 'package:rak_customer/features/designs/presentation/cubit/designs_cubit.dart';
+import 'package:rak_customer/features/designs/presentation/design_preview.dart';
 import 'package:rak_customer/features/designs/presentation/pages/design_viewer_page.dart';
 import 'package:rak_customer/shared/widgets/app_empty_state.dart';
 import 'package:rak_customer/shared/widgets/app_error_state.dart';
+import 'package:rak_customer/shared/widgets/fig_text.dart';
 
 class ProjectDesignsSection extends StatelessWidget {
   const ProjectDesignsSection({
@@ -105,60 +109,49 @@ class _DesignCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(design.title, style: Theme.of(context).textTheme.titleSmall),
-            Text(
-              design.versionLabel,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.inkMuted),
-            ),
-            if (design.assetIds.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: design.assetIds.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: AppSpacing.xs,
-                  crossAxisSpacing: AppSpacing.xs,
-                ),
-                itemBuilder: (context, index) {
-                  final assetId = design.assetIds[index];
-                  return Material(
-                    color: AppColors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(10),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => DesignViewerPage(
-                              assetId: assetId,
-                              title: design.title,
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Center(
-                        child: Icon(
-                          Icons.photo_outlined,
-                          color: AppColors.primary,
+    final assetId = design.assetIds.firstOrNull;
+    return Padding(
+      padding: EdgeInsets.only(bottom: context.s(28)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (assetId != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(context.s(12)),
+              child: Material(
+                color: AppColors.sand,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => DesignViewerPage(
+                          assetId: assetId,
+                          title: design.title,
                         ),
                       ),
+                    );
+                  },
+                  child: Image.asset(
+                    designPreviewAsset(title: design.title, assetId: assetId),
+                    height: context.s(200),
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => ColoredBox(
+                      color: AppColors.sand,
+                      child: SizedBox(
+                        height: context.s(200),
+                        width: double.infinity,
+                      ),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
-            ],
-          ],
-        ),
+            ),
+          SizedBox(height: context.s(10)),
+          FigText(design.title, style: AppText.screenTitle),
+          SizedBox(height: context.s(2)),
+          FigText(design.versionLabel, style: AppText.caption),
+        ],
       ),
     );
   }

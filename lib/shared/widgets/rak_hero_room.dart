@@ -76,11 +76,9 @@ class RakHeroRoom extends StatelessWidget {
                 children: [
                   FigText(
                     'RAK  /  CONSIDERED LIVING',
-                    style: AppText.caption.copyWith(
+                    style: AppText.caption2.copyWith(
                       fontWeight: FontWeight.w500,
-                      fontSize: 10,
                       letterSpacing: 1,
-                      height: 1.5,
                     ),
                     color: AppColors.white,
                   ),
@@ -93,9 +91,8 @@ class RakHeroRoom extends StatelessWidget {
                   const Spacer(),
                   FigText(
                     'PROJECT INTERIOR',
-                    style: AppText.caption.copyWith(
+                    style: AppText.caption2.copyWith(
                       fontWeight: FontWeight.w500,
-                      fontSize: 9,
                       letterSpacing: 0.8,
                     ),
                     color: AppColors.white,

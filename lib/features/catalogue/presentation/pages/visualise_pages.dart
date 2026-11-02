@@ -20,10 +20,14 @@ class VisualiseHubPage extends StatelessWidget {
     super.key,
     required this.productId,
     required this.productName,
+    this.imageHint = 'chair',
+    this.specs,
   });
 
   final String productId;
   final String productName;
+  final String imageHint;
+  final String? specs;
 
   String get _base => '/shop/products/$productId/visualise';
 
@@ -78,8 +82,10 @@ class VisualiseHubPage extends StatelessWidget {
             icon: 'assets/icons/visualise_ar.svg',
             label: 'Place it in my room · AR',
             primary: false,
-            onPressed: () =>
-                context.push('$_base/ar/permission', extra: productName),
+            onPressed: () => context.push(
+              '/shop/products/$productId/ar?hint=$imageHint&specs=${Uri.encodeComponent(specs ?? '')}',
+              extra: productName,
+            ),
           ),
         ],
       ),
@@ -462,8 +468,9 @@ class VisualiseArPage extends StatelessWidget {
         title: 'Camera access is off',
         subtitle: 'YOU’RE IN CONTROL',
         barLabel: 'Try camera access again',
-        barCaption: 'This prototype does not change settings',
-        onBar: () => context.go('$_base/ar/permission'),
+        barCaption: 'Opens the camera permission prompt',
+        onBar: () =>
+            context.push('/shop/products/$productId/ar', extra: productName),
         children: [
           FigText('Allow access when you’re ready', style: AppText.title),
           const SizedBox(height: AppSpacing.sm),
@@ -556,8 +563,9 @@ class VisualiseArPage extends StatelessWidget {
         title: 'See it in your space',
         subtitle: 'AUGMENTED REALITY PREVIEW',
         barLabel: 'Allow camera & continue',
-        barCaption: 'Prototype · No live camera is accessed',
-        onBar: () => context.push('$_base/ar/scan'),
+        barCaption: 'Opens your camera to place this piece',
+        onBar: () =>
+            context.push('/shop/products/$productId/ar', extra: productName),
         children: [
           const RakPhoto(
             asset: 'assets/photos/hero_home.png',

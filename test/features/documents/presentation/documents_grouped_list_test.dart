@@ -11,26 +11,28 @@ void main() {
       MaterialApp(
         theme: AppTheme.light(),
         home: Scaffold(
-          body: DocumentsGroupedList(
-            documents: [
-              ProjectDocument(
-                id: 'doc_invoice',
-                projectId: 'prj',
-                type: 'invoice',
-                title: 'Progress invoice 1',
-                assetId: 'ast_doc_invoice',
-                createdAt: DateTime.utc(2026, 6, 20),
-              ),
-              ProjectDocument(
-                id: 'doc_agreement',
-                projectId: 'prj',
-                type: 'agreement',
-                title: 'Interior works agreement',
-                assetId: 'ast_doc_agreement',
-                createdAt: DateTime.utc(2026, 3, 9),
-              ),
-            ],
-            onOpen: (_) {},
+          body: SingleChildScrollView(
+            child: DocumentsGroupedList(
+              documents: [
+                ProjectDocument(
+                  id: 'doc_invoice',
+                  projectId: 'prj',
+                  type: 'invoice',
+                  title: 'Progress invoice 1',
+                  assetId: 'ast_doc_invoice',
+                  createdAt: DateTime.utc(2026, 6, 20),
+                ),
+                ProjectDocument(
+                  id: 'doc_agreement',
+                  projectId: 'prj',
+                  type: 'agreement',
+                  title: 'Interior works agreement',
+                  assetId: 'ast_doc_agreement',
+                  createdAt: DateTime.utc(2026, 3, 9),
+                ),
+              ],
+              onOpen: (_) {},
+            ),
           ),
         ),
       ),

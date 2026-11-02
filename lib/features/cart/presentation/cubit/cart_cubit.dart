@@ -50,8 +50,8 @@ class CartCubit extends Cubit<CartState> {
   late final StreamSubscription<ShopBranch> _branchSub;
   ShoppingCart? _rawCart;
 
-  Future<void> load({String? accountId}) async {
-    emit(const CartLoading());
+  Future<void> load({String? accountId, bool silent = false}) async {
+    if (!silent) emit(const CartLoading());
     final result = await _getCart(accountId: accountId);
     if (isClosed) return;
     if (result.isFailure) {

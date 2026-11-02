@@ -70,4 +70,25 @@ class SupportRepositoryImpl implements SupportRepository {
       return const Err(UnknownFailure());
     }
   }
+
+  @override
+  Future<Result<SupportQuery>> updateStatus({
+    required String accountId,
+    required String queryId,
+    required String status,
+  }) async {
+    try {
+      return Success(
+        await _datasource.updateStatus(
+          accountId: accountId,
+          queryId: queryId,
+          status: status,
+        ),
+      );
+    } on Failure catch (failure) {
+      return Err(failure);
+    } catch (_) {
+      return const Err(UnknownFailure());
+    }
+  }
 }

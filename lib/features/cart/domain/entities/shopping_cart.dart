@@ -9,6 +9,7 @@ class CartLine {
     required this.unavailable,
     required this.repriced,
     this.imageHint = 'placeholder',
+    this.salesMode = 'fixed_price',
   });
 
   final String id;
@@ -20,6 +21,13 @@ class CartLine {
   final bool unavailable;
   final bool repriced;
   final String imageHint;
+  final String salesMode;
+
+  String? get fulfilmentNote => switch (salesMode) {
+    'made_to_order' => 'Made to order · about 6–8 weeks',
+    'fixed_price' => 'Ready-made · about 5–7 days',
+    _ => null,
+  };
 
   CartLine copyWith({bool? unavailable}) {
     return CartLine(
@@ -32,6 +40,7 @@ class CartLine {
       unavailable: unavailable ?? this.unavailable,
       repriced: repriced,
       imageHint: imageHint,
+      salesMode: salesMode,
     );
   }
 }
@@ -54,6 +63,12 @@ class ShoppingCart {
   bool get isEmpty => lines.isEmpty;
 
   bool get hasUnavailableLine => lines.any((line) => line.unavailable);
+
+  bool get hasRepricedLine => lines.any((line) => line.repriced);
+
+  bool get hasMixedFulfilment =>
+      lines.any((line) => line.salesMode == 'fixed_price') &&
+      lines.any((line) => line.salesMode == 'made_to_order');
 
   ShoppingCart copyWith({List<CartLine>? lines}) {
     return ShoppingCart(

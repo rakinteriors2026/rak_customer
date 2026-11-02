@@ -24,3 +24,15 @@ plugins {
 }
 
 include(":app")
+
+val floorPatch = file("patches/apply_floor_placement.py")
+if (floorPatch.exists()) {
+    val process =
+        ProcessBuilder("python3", floorPatch.absolutePath)
+            .redirectErrorStream(true)
+            .start()
+    val log = process.inputStream.bufferedReader().readText()
+    val code = process.waitFor()
+    if (log.isNotBlank()) println(log.trim())
+    if (code != 0) println("AR floor patch exited $code")
+}

@@ -1,6 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_layout.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
@@ -15,8 +15,7 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final path = GoRouterState.of(context).uri.path;
     final hideNav =
-        path == '/cart' ||
-        path == '/checkout' ||
+        path.startsWith('/checkout') ||
         path.contains('/products/') ||
         path.contains('/visualise') ||
         path.startsWith('/sales-kit') ||
@@ -28,51 +27,56 @@ class AppShell extends StatelessWidget {
           ? null
           : Material(
               color: AppColors.surface,
+              elevation: 12,
+              shadowColor: const Color(0x14000000),
               child: SafeArea(
                 top: false,
-                child: SizedBox(
-                  height: context.s(AppLayout.navBarHeight),
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      context.s(8),
-                      context.s(10),
-                      context.s(8),
-                      context.s(20),
-                    ),
-                    child: Row(
-                      children: [
-                        _Tab(
-                          label: 'Home',
-                          asset: 'nav_home',
-                          selected: navigationShell.currentIndex == 0,
-                          onTap: () => navigationShell.goBranch(0),
-                        ),
-                        _Tab(
-                          label: 'Projects',
-                          asset: 'nav_projects',
-                          selected: navigationShell.currentIndex == 1,
-                          onTap: () => navigationShell.goBranch(1),
-                        ),
-                        _Tab(
-                          label: 'Shop',
-                          asset: 'nav_shop',
-                          selected: navigationShell.currentIndex == 2,
-                          onTap: () => navigationShell.goBranch(2),
-                        ),
-                        _Tab(
-                          label: 'Support',
-                          asset: 'nav_support',
-                          selected: navigationShell.currentIndex == 3,
-                          onTap: () => navigationShell.goBranch(3),
-                        ),
-                        _Tab(
-                          label: 'Account',
-                          asset: 'nav_account',
-                          selected: navigationShell.currentIndex == 4,
-                          onTap: () => navigationShell.goBranch(4),
-                        ),
-                      ],
-                    ),
+                minimum: EdgeInsets.only(bottom: context.s(6)),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    context.s(8),
+                    context.s(14),
+                    context.s(8),
+                    0,
+                  ),
+                  child: Row(
+                    children: [
+                      _Tab(
+                        label: 'Home',
+                        icon: CupertinoIcons.house,
+                        selectedIcon: CupertinoIcons.house_fill,
+                        selected: navigationShell.currentIndex == 0,
+                        onTap: () => navigationShell.goBranch(0),
+                      ),
+                      _Tab(
+                        label: 'Shop',
+                        icon: CupertinoIcons.bag,
+                        selectedIcon: CupertinoIcons.bag_fill,
+                        selected: navigationShell.currentIndex == 1,
+                        onTap: () => navigationShell.goBranch(1),
+                      ),
+                      _Tab(
+                        label: 'Cart',
+                        icon: CupertinoIcons.cart,
+                        selectedIcon: CupertinoIcons.cart_fill,
+                        selected: navigationShell.currentIndex == 2,
+                        onTap: () => navigationShell.goBranch(2),
+                      ),
+                      _Tab(
+                        label: 'Orders',
+                        icon: CupertinoIcons.cube_box,
+                        selectedIcon: CupertinoIcons.cube_box_fill,
+                        selected: navigationShell.currentIndex == 3,
+                        onTap: () => navigationShell.goBranch(3),
+                      ),
+                      _Tab(
+                        label: 'Account',
+                        icon: CupertinoIcons.person,
+                        selectedIcon: CupertinoIcons.person_fill,
+                        selected: navigationShell.currentIndex == 4,
+                        onTap: () => navigationShell.goBranch(4),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -84,37 +88,31 @@ class AppShell extends StatelessWidget {
 class _Tab extends StatelessWidget {
   const _Tab({
     required this.label,
-    required this.asset,
+    required this.icon,
+    required this.selectedIcon,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
-  final String asset;
+  final IconData icon;
+  final IconData selectedIcon;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = selected ? AppColors.accent : AppColors.muted;
-    final icon = context.s(AppLayout.navIcon);
+    final iconSize = context.s(AppLayout.navIcon);
     return Expanded(
       child: InkWell(
         onTap: onTap,
         splashColor: AppColors.accent.withValues(alpha: 0.10),
         highlightColor: AppColors.accent.withValues(alpha: 0.05),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: icon,
-              height: icon,
-              child: SvgPicture.asset(
-                'assets/icons/${asset}_${selected ? 'active' : 'idle'}.svg',
-                width: icon,
-                height: icon,
-                fit: BoxFit.contain,
-              ),
-            ),
+            Icon(selected ? selectedIcon : icon, color: color, size: iconSize),
             SizedBox(height: context.s(AppLayout.navGap)),
             Text(
               label,

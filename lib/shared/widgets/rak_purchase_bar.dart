@@ -11,12 +11,16 @@ class RakPurchaseBar extends StatelessWidget {
     this.summary,
     required this.actionLabel,
     this.onAction,
+    this.secondaryLabel,
+    this.onSecondary,
     this.loading = false,
   });
 
   final String? summary;
   final String actionLabel;
   final VoidCallback? onAction;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
   final bool loading;
 
   @override
@@ -46,6 +50,13 @@ class RakPurchaseBar extends StatelessWidget {
               loading: loading,
               onPressed: onAction,
             ),
+            if (secondaryLabel != null) ...[
+              SizedBox(height: context.s(4)),
+              TextButton(
+                onPressed: onSecondary,
+                child: Text(secondaryLabel!),
+              ),
+            ],
           ],
         ),
       ),

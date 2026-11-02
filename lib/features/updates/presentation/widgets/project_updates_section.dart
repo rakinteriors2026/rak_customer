@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rak_customer/core/di/injection.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
+import 'package:rak_customer/core/theme/app_scale.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
+import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/features/updates/domain/entities/site_update.dart';
 import 'package:rak_customer/features/updates/domain/usecases/get_project_updates.dart';
 import 'package:rak_customer/features/updates/presentation/cubit/updates_cubit.dart';
@@ -10,6 +12,7 @@ import 'package:rak_customer/features/updates/presentation/widgets/asset_thumbna
 import 'package:rak_customer/shared/formatters/date_formatter.dart';
 import 'package:rak_customer/shared/widgets/app_empty_state.dart';
 import 'package:rak_customer/shared/widgets/app_error_state.dart';
+import 'package:rak_customer/shared/widgets/fig_text.dart';
 
 class ProjectUpdatesSection extends StatelessWidget {
   const ProjectUpdatesSection({
@@ -116,8 +119,9 @@ class UpdatesFeed extends StatelessWidget {
       );
     }
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...visible.map(_UpdateCard.new),
+        for (final update in visible) _UpdateEntry(update),
         if (hasMore)
           TextButton(
             onPressed: loadingMore ? null : onLoadMore,
@@ -128,53 +132,52 @@ class UpdatesFeed extends StatelessWidget {
   }
 }
 
-class _UpdateCard extends StatelessWidget {
-  const _UpdateCard(this.update);
+class _UpdateEntry extends StatelessWidget {
+  const _UpdateEntry(this.update);
   final SiteUpdate update;
 
   @override
   Widget build(BuildContext context) {
     if (update.isDraft) return const SizedBox.shrink();
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              DateFormatter.displayDate(update.eventAt),
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(color: AppColors.inkMuted),
-            ),
-            if (update.note != null) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text(update.note!),
-            ],
-            if (update.assets.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: update.assets.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: AppSpacing.xs,
-                  crossAxisSpacing: AppSpacing.xs,
-                ),
-                itemBuilder: (context, index) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: AssetThumbnail(
-                      assetId: update.assets[index].assetId,
-                    ),
-                  );
-                },
-              ),
-            ],
+    final photos = update.assets;
+    final paired = photos.length > 1;
+    return Padding(
+      padding: EdgeInsets.only(bottom: context.s(8)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FigText(
+            DateFormatter.displayDate(update.eventAt),
+            style: AppText.caption,
+          ),
+          if (update.note != null) ...[
+            SizedBox(height: context.s(6)),
+            FigText(update.note!, style: AppText.body),
           ],
-        ),
+          if (photos.isNotEmpty) ...[
+            SizedBox(height: context.s(12)),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: photos.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: paired ? 2 : 1,
+                mainAxisSpacing: context.s(8),
+                crossAxisSpacing: context.s(8),
+                childAspectRatio: paired ? 1 : 16 / 10,
+              ),
+              itemBuilder: (context, index) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(context.s(12)),
+                  child: AssetThumbnail(assetId: photos[index].assetId),
+                );
+              },
+            ),
+          ],
+          SizedBox(height: context.s(16)),
+          const Divider(height: 1, color: AppColors.line),
+          SizedBox(height: context.s(16)),
+        ],
       ),
     );
   }

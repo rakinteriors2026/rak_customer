@@ -6,10 +6,16 @@ import 'package:rak_customer/core/theme/app_text.dart';
 import 'package:rak_customer/shared/widgets/fig_text.dart';
 
 class RakStatusBanner extends StatelessWidget {
-  const RakStatusBanner({super.key, required this.text, this.onTap});
+  const RakStatusBanner({
+    super.key,
+    required this.text,
+    this.onTap,
+    this.trailing,
+  });
 
   final String text;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +28,21 @@ class RakStatusBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         child: Padding(
           padding: EdgeInsets.all(context.s(12)),
-          child: FigText(text, style: AppText.caption, color: AppColors.accent),
+          child: trailing == null
+              ? FigText(text, style: AppText.caption, color: AppColors.accent)
+              : Row(
+                  children: [
+                    Expanded(
+                      child: FigText(
+                        text,
+                        style: AppText.caption,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                    SizedBox(width: context.s(8)),
+                    trailing!,
+                  ],
+                ),
         ),
       ),
     );

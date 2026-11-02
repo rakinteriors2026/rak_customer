@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:rak_customer/core/theme/app_layout.dart';
 import 'package:rak_customer/core/theme/app_scale.dart';
@@ -80,8 +81,8 @@ class RakScreenHeader extends StatelessWidget {
                   alignment: Alignment.center,
                 ),
                 icon: Icon(
-                  Icons.chevron_left,
-                  size: context.s(28),
+                  CupertinoIcons.chevron_back,
+                  size: context.s(22),
                   color: AppText.heading.color,
                 ),
               ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rak_customer/core/config/local_demo_config.dart';
+import 'package:rak_customer/core/navigation/auth_return.dart';
 import 'package:rak_customer/core/di/injection.dart';
 import 'package:rak_customer/core/theme/app_colors.dart';
 import 'package:rak_customer/core/theme/app_spacing.dart';
@@ -47,13 +48,21 @@ class _PhoneEntryViewState extends State<_PhoneEntryView> {
     return BlocConsumer<PhoneEntryCubit, PhoneEntryState>(
       listener: (context, state) {
         if (state is PhoneEntrySuccess) {
-          context.push('/login/otp', extra: state.challenge);
+          final from = AuthReturn.readFrom(GoRouterState.of(context).uri);
+          context.push(
+            AuthReturn.otpLocation(from: from),
+            extra: state.challenge,
+          );
         }
       },
       builder: (context, state) {
         final submitting = state is PhoneEntrySubmitting;
         final error = state is PhoneEntryIdle ? state.error : null;
+        final from = AuthReturn.readFrom(GoRouterState.of(context).uri);
         return RakPage(
+          onBack: from == null
+              ? null
+              : () => context.go(AuthReturn.cancelDestination(from)),
           header: const RakBrandHeader(),
           child: ListView(
             padding: context.figPagePadding,
@@ -103,9 +112,11 @@ class _PhoneEntryViewState extends State<_PhoneEntryView> {
               ),
               const SizedBox(height: AppSpacing.sm),
               RakButton(
-                label: 'Explore the shop',
+                label: from == null ? 'Explore the shop' : 'Not now',
                 style: RakButtonStyle.secondary,
-                onPressed: () => context.go('/shop'),
+                onPressed: () => context.go(
+                  from == null ? '/shop' : AuthReturn.cancelDestination(from),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               GestureDetector(

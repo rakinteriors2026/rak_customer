@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rak_customer/app/shell.dart';
+import 'package:rak_customer/core/navigation/auth_return.dart';
 import 'package:rak_customer/core/di/injection.dart';
+import 'package:rak_customer/core/domain/repositories/cart_count_repository.dart';
+import 'package:rak_customer/core/domain/entities/account.dart';
 import 'package:rak_customer/core/domain/entities/otp_challenge.dart';
 import 'package:rak_customer/core/domain/repositories/shop_branch_repository.dart';
 import 'package:rak_customer/features/auth/presentation/cubit/session_cubit.dart';
@@ -15,8 +18,12 @@ import 'package:rak_customer/features/cart/domain/entities/shop_order.dart';
 import 'package:rak_customer/features/cart/domain/usecases/add_cart_item.dart';
 import 'package:rak_customer/features/cart/presentation/pages/cart_page.dart';
 import 'package:rak_customer/features/cart/presentation/pages/checkout_pages.dart';
+import 'package:rak_customer/features/catalogue/domain/entities/product_enquiry.dart';
 import 'package:rak_customer/features/catalogue/presentation/pages/catalogue_page.dart';
+import 'package:rak_customer/features/catalogue/presentation/pages/enquiry_pages.dart';
+import 'package:rak_customer/features/catalogue/presentation/pages/shop_home_page.dart';
 import 'package:rak_customer/features/catalogue/presentation/pages/product_360_page.dart';
+import 'package:rak_customer/features/catalogue/presentation/pages/product_ar_camera_page.dart';
 import 'package:rak_customer/features/catalogue/presentation/pages/product_detail_page.dart';
 import 'package:rak_customer/features/catalogue/presentation/pages/shop_branch_pages.dart';
 import 'package:rak_customer/features/catalogue/presentation/pages/shop_extra_pages.dart';
@@ -29,6 +36,7 @@ import 'package:rak_customer/features/home/presentation/pages/sales_kit_pages.da
 import 'package:rak_customer/features/notifications/domain/entities/in_app_notification.dart';
 import 'package:rak_customer/features/notifications/presentation/pages/access_denied_page.dart';
 import 'package:rak_customer/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:rak_customer/features/projects/presentation/pages/project_handover_page.dart';
 import 'package:rak_customer/features/projects/presentation/pages/project_list_page.dart';
 import 'package:rak_customer/features/projects/presentation/pages/project_section_page.dart';
 import 'package:rak_customer/features/projects/presentation/pages/project_timeline_page.dart';
@@ -90,9 +98,24 @@ Widget _productDetailPage(GoRouterState state, SessionCubit sessionCubit) {
   );
 }
 
+Account? _interiorAccount(SessionCubit sessionCubit) {
+  final session = sessionCubit.state;
+  if (session is SessionAuthenticated && session.account.hasProjects) {
+    return session.account;
+  }
+  return null;
+}
+
 GoRouter createRouter(SessionCubit sessionCubit) {
+  final interiorAccounts = Stream<Account?>.multi((listener) {
+    listener.add(_interiorAccount(sessionCubit));
+    final subscription = sessionCubit.stream.listen(
+      (_) => listener.add(_interiorAccount(sessionCubit)),
+    );
+    listener.onCancel = subscription.cancel;
+  });
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/shop',
     refreshListenable: GoRouterRefreshStream(sessionCubit.stream),
     redirect: (context, state) {
       final session = sessionCubit.state;
@@ -109,8 +132,12 @@ GoRouter createRouter(SessionCubit sessionCubit) {
           location.startsWith('/account/delete') ||
           location.startsWith('/support/');
       final signedIn = session is SessionAuthenticated;
-      if (!signedIn && needsAuth) return '/login';
-      if (signedIn && loggingIn) return '/home';
+      if (!signedIn && needsAuth) {
+        return AuthReturn.loginLocation(from: state.uri.toString());
+      }
+      if (signedIn && loggingIn) {
+        return AuthReturn.readFrom(state.uri) ?? '/shop';
+      }
       return null;
     },
     routes: [
@@ -122,188 +149,8 @@ GoRouter createRouter(SessionCubit sessionCubit) {
             routes: [
               GoRoute(
                 path: '/home',
-                builder: (context, state) => HomePage(
-                  displayName: _displayName(sessionCubit),
-                  accountId: _accountId(sessionCubit),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/projects',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return ProjectListPage(accountId: accountId);
-                },
-              ),
-              GoRoute(
-                path: '/projects/:id/timeline',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return ProjectTimelinePage(
-                    accountId: accountId,
-                    projectId: state.pathParameters['id']!,
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/projects/:id/updates',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  final projectId = state.pathParameters['id']!;
-                  return ProjectSectionPage(
-                    title: 'From your site',
-                    subtitle: 'Latest published updates',
-                    child: ProjectUpdatesSection(
-                      accountId: accountId,
-                      projectId: projectId,
-                      showHeading: false,
-                    ),
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/projects/:id/payments',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  final projectId = state.pathParameters['id']!;
-                  return ProjectSectionPage(
-                    title: 'Project payments',
-                    subtitle: 'Figures published by RAK finance',
-                    child: ProjectFinanceSection(
-                      accountId: accountId,
-                      projectId: projectId,
-                      showHeading: false,
-                    ),
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/projects/:id/documents',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  final projectId = state.pathParameters['id']!;
-                  return ProjectSectionPage(
-                    title: 'Your documents',
-                    subtitle: 'Quotations, agreements and invoices',
-                    child: ProjectDocumentsSection(
-                      accountId: accountId,
-                      projectId: projectId,
-                      showHeading: false,
-                    ),
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/projects/:id/designs',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  final projectId = state.pathParameters['id']!;
-                  return ProjectSectionPage(
-                    title: 'Approved designs',
-                    subtitle: 'A clear picture of what is coming.',
-                    child: ProjectDesignsSection(
-                      accountId: accountId,
-                      projectId: projectId,
-                      showHeading: false,
-                    ),
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/projects/:id/review',
-                builder: (context, state) {
-                  final projectId = state.pathParameters['id']!;
-                  return ReviewCentrePage(
-                    projectId: projectId,
-                    projectName: state.extra is String
-                        ? state.extra as String
-                        : 'Palm Grove Residence',
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/projects/:id/review/quotation',
                 builder: (context, state) =>
-                    QuotationReviewPage(projectId: state.pathParameters['id']!),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/quotation/approve',
-                builder: (context, state) => ConfirmApprovalPage(
-                  projectId: state.pathParameters['id']!,
-                  kind: 'quotation',
-                ),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/quotation/reject',
-                builder: (context, state) => RejectDecisionPage(
-                  projectId: state.pathParameters['id']!,
-                  kind: 'quotation',
-                ),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/quotation/approved',
-                builder: (context, state) => DecisionResultPage(
-                  projectId: state.pathParameters['id']!,
-                  kind: 'quotation',
-                  approved: true,
-                ),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/quotation/rejected',
-                builder: (context, state) => DecisionResultPage(
-                  projectId: state.pathParameters['id']!,
-                  kind: 'quotation',
-                  approved: false,
-                ),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/design',
-                builder: (context, state) =>
-                    DesignReviewPage(projectId: state.pathParameters['id']!),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/design/full',
-                builder: (context, state) =>
-                    DesignFullViewPage(projectId: state.pathParameters['id']!),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/design/approve',
-                builder: (context, state) => ConfirmApprovalPage(
-                  projectId: state.pathParameters['id']!,
-                  kind: 'design',
-                ),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/design/reject',
-                builder: (context, state) => RejectDecisionPage(
-                  projectId: state.pathParameters['id']!,
-                  kind: 'design',
-                ),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/design/approved',
-                builder: (context, state) => DecisionResultPage(
-                  projectId: state.pathParameters['id']!,
-                  kind: 'design',
-                  approved: true,
-                ),
-              ),
-              GoRoute(
-                path: '/projects/:id/review/design/rejected',
-                builder: (context, state) => DecisionResultPage(
-                  projectId: state.pathParameters['id']!,
-                  kind: 'design',
-                  approved: false,
-                ),
+                    ShopHomePage(interiorAccounts: interiorAccounts),
               ),
             ],
           ),
@@ -311,13 +158,29 @@ GoRouter createRouter(SessionCubit sessionCubit) {
             routes: [
               GoRoute(
                 path: '/shop',
-                builder: (context, state) => const CataloguePage(),
+                builder: (context, state) => CataloguePage(
+                  watchCartCount: () => sl<CartCountRepository>().watch(
+                    accountId: _accountId(sessionCubit),
+                  ),
+                ),
                 routes: [
                   GoRoute(
                     path: 'products/:id',
                     builder: (context, state) =>
                         _productDetailPage(state, sessionCubit),
                     routes: [
+                      GoRoute(
+                        path: 'ar',
+                        builder: (context, state) => ProductArCameraPage(
+                          productId: state.pathParameters['id']!,
+                          productName: state.extra is String
+                              ? state.extra as String
+                              : 'This piece',
+                          imageHint:
+                              state.uri.queryParameters['hint'] ?? 'chair',
+                          specs: state.uri.queryParameters['specs'],
+                        ),
+                      ),
                       GoRoute(
                         path: '360',
                         builder: (context, state) => Product360Page(
@@ -334,6 +197,9 @@ GoRouter createRouter(SessionCubit sessionCubit) {
                           productName: state.extra is String
                               ? state.extra as String
                               : 'Linen lounge chair',
+                          imageHint:
+                              state.uri.queryParameters['hint'] ?? 'chair',
+                          specs: state.uri.queryParameters['specs'],
                         ),
                         routes: [
                           GoRoute(
@@ -377,25 +243,20 @@ GoRouter createRouter(SessionCubit sessionCubit) {
                     path: 'unavailable',
                     builder: (context, state) => const BranchUnavailablePage(),
                   ),
+                  GoRoute(
+                    path: 'search',
+                    builder: (context, state) => const SearchPage(),
+                  ),
+                  GoRoute(
+                    path: 'filters',
+                    builder: (context, state) => const FiltersPage(),
+                  ),
                 ],
               ),
               GoRoute(
                 path: '/products/:id',
                 builder: (context, state) =>
                     _productDetailPage(state, sessionCubit),
-              ),
-              GoRoute(
-                path: '/cart',
-                builder: (context, state) =>
-                    CartPage(accountId: _accountId(sessionCubit)),
-              ),
-              GoRoute(
-                path: '/search',
-                builder: (context, state) => const SearchPage(),
-              ),
-              GoRoute(
-                path: '/filters',
-                builder: (context, state) => const FiltersPage(),
               ),
               GoRoute(
                 path: '/favourites',
@@ -410,7 +271,31 @@ GoRouter createRouter(SessionCubit sessionCubit) {
               ),
               GoRoute(
                 path: '/enquiry/sent',
-                builder: (context, state) => const EnquirySentPage(),
+                builder: (context, state) {
+                  final extra = state.extra;
+                  return EnquirySentPage(
+                    enquiry: extra is ProductEnquiry ? extra : null,
+                  );
+                },
+              ),
+              GoRoute(
+                path: '/enquiries',
+                builder: (context, state) =>
+                    EnquiryListPage(accountId: _accountId(sessionCubit)),
+              ),
+              GoRoute(
+                path: '/enquiries/:id',
+                builder: (context, state) =>
+                    EnquiryDetailPage(enquiryId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/cart',
+                builder: (context, state) =>
+                    CartPage(accountId: _accountId(sessionCubit)),
               ),
               GoRoute(
                 path: '/checkout',
@@ -470,6 +355,10 @@ GoRouter createRouter(SessionCubit sessionCubit) {
                   return AddressPage(accountId: accountId);
                 },
               ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
               GoRoute(
                 path: '/orders',
                 builder: (context, state) {
@@ -496,51 +385,16 @@ GoRouter createRouter(SessionCubit sessionCubit) {
                   ),
                   GoRoute(
                     path: 'cancellation',
-                    builder: (context, state) => CancellationRequestedPage(
-                      orderId: state.pathParameters['id']!,
-                    ),
+                    builder: (context, state) {
+                      final accountId = _accountId(sessionCubit);
+                      if (accountId == null) return const SizedBox.shrink();
+                      return CancellationRequestedPage(
+                        accountId: accountId,
+                        orderId: state.pathParameters['id']!,
+                      );
+                    },
                   ),
                 ],
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/support',
-                builder: (context, state) {
-                  final subject = state.uri.queryParameters['subject'];
-                  final message = state.uri.queryParameters['message'];
-                  return SupportListPage(
-                    key: ValueKey('$subject|$message'),
-                    accountId: _accountId(sessionCubit),
-                    initialSubject: subject,
-                    initialMessage: message,
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/support/new',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return CreateQueryPage(
-                    accountId: accountId,
-                    prefilledProjectId: state.uri.queryParameters['projectId'],
-                    prefilledOrderId: state.uri.queryParameters['orderId'],
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/support/:id',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return SupportDetailPage(
-                    accountId: accountId,
-                    queryId: state.pathParameters['id']!,
-                  );
-                },
               ),
             ],
           ),
@@ -591,6 +445,253 @@ GoRouter createRouter(SessionCubit sessionCubit) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/projects/overview',
+        builder: (context, state) => HomePage(
+          displayName: _displayName(sessionCubit),
+          accountId: _accountId(sessionCubit),
+        ),
+      ),
+      GoRoute(
+        path: '/projects',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return ProjectListPage(accountId: accountId);
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/handover',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return ProjectHandoverPage(
+            accountId: accountId,
+            projectId: state.pathParameters['id']!,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/timeline',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return ProjectTimelinePage(
+            accountId: accountId,
+            projectId: state.pathParameters['id']!,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/updates',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          final projectId = state.pathParameters['id']!;
+          return ProjectSectionPage(
+            title: 'From your site',
+            subtitle: 'Latest published updates',
+            returnTo: state.extra is String
+                ? state.extra as String
+                : null,
+            child: ProjectUpdatesSection(
+              accountId: accountId,
+              projectId: projectId,
+              showHeading: false,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/payments',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          final projectId = state.pathParameters['id']!;
+          return ProjectSectionPage(
+            title: 'Project payments',
+            subtitle: 'Figures published by RAK finance',
+            child: ProjectFinanceSection(
+              accountId: accountId,
+              projectId: projectId,
+              showHeading: false,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/documents',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          final projectId = state.pathParameters['id']!;
+          return ProjectSectionPage(
+            title: 'Your documents',
+            subtitle: 'Quotations, agreements and invoices',
+            child: ProjectDocumentsSection(
+              accountId: accountId,
+              projectId: projectId,
+              showHeading: false,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/designs',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          final projectId = state.pathParameters['id']!;
+          return ProjectSectionPage(
+            title: 'Approved designs',
+            subtitle: 'Drawings ready to build.',
+            child: ProjectDesignsSection(
+              accountId: accountId,
+              projectId: projectId,
+              showHeading: false,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/review',
+        builder: (context, state) {
+          final projectId = state.pathParameters['id']!;
+          return ReviewCentrePage(
+            projectId: projectId,
+            projectName: state.extra is String
+                ? state.extra as String
+                : 'Palm Grove Residence',
+          );
+        },
+      ),
+      GoRoute(
+        path: '/projects/:id/review/quotation',
+        builder: (context, state) =>
+            QuotationReviewPage(projectId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/quotation/closed',
+        builder: (context, state) => ClosedApprovalPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'quotation',
+          version: 3,
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/quotation/approve',
+        builder: (context, state) => ConfirmApprovalPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'quotation',
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/quotation/reject',
+        builder: (context, state) => RejectDecisionPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'quotation',
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/quotation/approved',
+        builder: (context, state) => DecisionResultPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'quotation',
+          approved: true,
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/quotation/rejected',
+        builder: (context, state) => DecisionResultPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'quotation',
+          approved: false,
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/design',
+        builder: (context, state) =>
+            DesignReviewPage(projectId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/design/closed',
+        builder: (context, state) => ClosedApprovalPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'design',
+          version: 2,
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/design/full',
+        builder: (context, state) =>
+            DesignFullViewPage(projectId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/design/approve',
+        builder: (context, state) => ConfirmApprovalPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'design',
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/design/reject',
+        builder: (context, state) => RejectDecisionPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'design',
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/design/approved',
+        builder: (context, state) => DecisionResultPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'design',
+          approved: true,
+        ),
+      ),
+      GoRoute(
+        path: '/projects/:id/review/design/rejected',
+        builder: (context, state) => DecisionResultPage(
+          projectId: state.pathParameters['id']!,
+          kind: 'design',
+          approved: false,
+        ),
+      ),
+      GoRoute(
+        path: '/support',
+        builder: (context, state) {
+          final subject = state.uri.queryParameters['subject'];
+          final message = state.uri.queryParameters['message'];
+          return SupportListPage(
+            key: ValueKey('$subject|$message'),
+            accountId: _accountId(sessionCubit),
+            initialSubject: subject,
+            initialMessage: message,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/support/new',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return CreateQueryPage(
+            accountId: accountId,
+            prefilledProjectId: state.uri.queryParameters['projectId'],
+            prefilledOrderId: state.uri.queryParameters['orderId'],
+          );
+        },
+      ),
+      GoRoute(
+        path: '/support/:id',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return SupportDetailPage(
+            accountId: accountId,
+            queryId: state.pathParameters['id']!,
+          );
+        },
       ),
       GoRoute(
         path: '/notifications',

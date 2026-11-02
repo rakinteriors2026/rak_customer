@@ -9,18 +9,31 @@ class ProjectSectionPage extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.child,
+    this.returnTo,
   });
 
   final String title;
   final String subtitle;
   final Widget child;
+  final String? returnTo;
 
   @override
   Widget build(BuildContext context) {
     return RakPage(
       title: title,
       subtitle: subtitle,
-      onBack: () => context.go('/projects'),
+      onBack: () {
+        final destination = returnTo;
+        if (destination != null) {
+          context.go(destination);
+          return;
+        }
+        if (context.canPop()) {
+          context.pop();
+          return;
+        }
+        context.go('/account');
+      },
       child: ListView(padding: context.figPagePadding, children: [child]),
     );
   }

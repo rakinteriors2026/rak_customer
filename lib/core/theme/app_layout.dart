@@ -7,7 +7,7 @@ class AppLayout {
   static const productCardWidth = 165.0;
   static const productCardHeight = 332.0;
   static const productArtWidth = 165.0;
-  static const productArtHeight = 130.0;
+  static const productArtHeight = 168.0;
   static const productRadius = 12.0;
   static const productGap = 12.0;
   static const promoWidth = 312.0;
@@ -22,7 +22,6 @@ class AppLayout {
   static const heroWelcomeHeight = 200.0;
   static const heroHomeHeight = 174.0;
   static const heroProductHeight = 205.0;
-  static const navBarHeight = 78.0;
   static const navIcon = 22.0;
   static const navGap = 4.0;
 }
