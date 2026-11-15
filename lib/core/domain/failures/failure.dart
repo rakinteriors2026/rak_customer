@@ -40,3 +40,13 @@ class UnknownFailure extends Failure {
     super.message = 'Something went wrong. Please try again.',
   ]);
 }
+
+/// Raised when a feature is intentionally unavailable in this build — e.g. a
+/// release build without the demo flag where there is no real backend wired in
+/// yet. Lets the UI show a neutral "service unavailable / not configured"
+/// state instead of a working bypass.
+class ServiceUnavailableFailure extends Failure {
+  const ServiceUnavailableFailure([
+    super.message = 'This service is not available right now.',
+  ]);
+}

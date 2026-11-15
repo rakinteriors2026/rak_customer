@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:rak_customer/core/config/local_demo_config.dart';
 import 'package:rak_customer/core/data/db/converters.dart';
 import 'package:rak_customer/core/data/db/seed.dart';
 import 'package:rak_customer/core/data/db/tables.dart';
@@ -89,16 +90,27 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
-  Future<void> seedIfNeeded() async {
+  /// Seeds local data. The public shop catalogue is always seeded so guests
+  /// can browse; the demo accounts and their account-scoped data (projects,
+  /// finance, documents, designs, tickets, notifications and the deliberate
+  /// cross-account isolation rows) are only seeded when [demoMode] is on.
+  ///
+  /// [demoMode] defaults to [LocalDemoConfig.demoModeEnabled] so a release
+  /// build without `--dart-define=ALLOW_DEMO=true` never creates demo
+  /// identities. (F-01)
+  Future<void> seedIfNeeded({bool? demoMode}) async {
+    final demo = demoMode ?? LocalDemoConfig.demoModeEnabled;
     final existing = await (select(
       appMeta,
     )..where((row) => row.key.equals('seeded'))).getSingleOrNull();
     if (existing == null) {
-      await SeedData.seed(this);
+      await SeedData.seed(this, demoMode: demo);
     }
-    await SeedData.seedUpdatesIfNeeded(this);
-    await SeedData.seedFinanceIfNeeded(this);
-    await SeedData.seedTrackingPhaseIfNeeded(this);
+    if (demo) {
+      await SeedData.seedUpdatesIfNeeded(this);
+      await SeedData.seedFinanceIfNeeded(this);
+      await SeedData.seedTrackingPhaseIfNeeded(this);
+    }
     await SeedData.seedIndiaLocaleIfNeeded(this);
   }
 }

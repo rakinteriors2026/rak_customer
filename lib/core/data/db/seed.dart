@@ -9,9 +9,26 @@ class SeedData {
   static const difcId = 'prj_difc';
   static const guestCartId = 'cart_guest';
 
-  static Future<void> seed(AppDatabase db) async {
+  /// Seeds local data.
+  ///
+  /// When [demoMode] is false only the public shop catalogue is seeded; the
+  /// demo accounts, projects and all of their account-scoped data are skipped
+  /// so a release build without the demo flag ships no login identities. (F-01)
+  static Future<void> seed(AppDatabase db, {required bool demoMode}) async {
     await db.transaction(() async {
       final now = DateTime.utc(2026, 9, 8, 6, 30);
+
+      await _insertCatalogue(db);
+
+      await db
+          .into(db.carts)
+          .insert(CartsCompanion.insert(id: guestCartId, totalMinor: 0));
+
+      await db
+          .into(db.appMeta)
+          .insert(AppMetaCompanion.insert(key: 'seeded', value: '1'));
+
+      if (!demoMode) return;
 
       await db
           .into(db.accounts)
@@ -128,126 +145,122 @@ class SeedData {
         ]);
       });
 
-      await db.batch((batch) {
-        batch.insertAll(db.categories, [
-          CategoriesCompanion.insert(
-            id: 'cat_furniture',
-            name: 'Furniture',
-            sortIndex: 0,
-          ),
-          CategoriesCompanion.insert(
-            id: 'cat_lighting',
-            name: 'Lighting',
-            sortIndex: 1,
-          ),
-          CategoriesCompanion.insert(
-            id: 'cat_storage',
-            name: 'Storage',
-            sortIndex: 2,
-          ),
-          CategoriesCompanion.insert(
-            id: 'cat_decor',
-            name: 'Decor',
-            sortIndex: 3,
-          ),
-        ]);
-        batch.insertAll(db.products, [
-          ProductsCompanion.insert(
-            id: 'prod_oak_table',
-            categoryId: 'cat_furniture',
-            name: 'Oak dining table',
-            description:
-                'Solid European oak, seating eight. Natural oil finish. Made for indoor dining rooms.',
-            salesMode: 'fixed_price',
-            priceMinor: const Value(1850000),
-            specs: 'W 220cm · D 100cm · H 76cm',
-            imageHint: 'table',
-            imageUrls: const Value([
-              'assets/showcase/piece_oak_table.jpg',
-              'assets/showcase/showcase_hillview_dining.jpg',
-            ]),
-            modelGlbUrl: const Value('assets/models/table.glb'),
-            sortCursor: 'p1',
-          ),
-          ProductsCompanion.insert(
-            id: 'prod_linen_sofa',
-            categoryId: 'cat_furniture',
-            name: 'Linen three-seat sofa',
-            description:
-                'Deep-seat sofa in natural linen with kiln-dried hardwood frame and duck-feather wrap.',
-            salesMode: 'fixed_price',
-            priceMinor: const Value(920000),
-            specs: 'W 230cm · D 98cm · H 82cm',
-            imageHint: 'sofa',
-            imageUrls: const Value([
-              'assets/showcase/piece_linen_sofa.jpg',
-              'assets/showcase/show_minimal_room.jpg',
-            ]),
-            modelGlbUrl: const Value('assets/models/sofa.glb'),
-            sortCursor: 'p2',
-          ),
-          ProductsCompanion.insert(
-            id: 'prod_brass_pendant',
-            categoryId: 'cat_lighting',
-            name: 'Brass dome pendant',
-            description:
-                'Hand-spun brass pendant, made to order. Lead time confirmed at serviceability check.',
-            salesMode: 'made_to_order',
-            priceMinor: const Value(240000),
-            specs: 'Diameter 42cm · drop 150cm max',
-            imageHint: 'light',
-            imageUrls: const Value([
-              'assets/showcase/piece_brass_pendant.jpg',
-              'assets/showcase/show_japandi_room.jpg',
-            ]),
-            modelGlbUrl: const Value('assets/models/lamp.glb'),
-            sortCursor: 'p3',
-          ),
-          ProductsCompanion.insert(
-            id: 'prod_wardrobe',
-            categoryId: 'cat_storage',
-            name: 'Walk-in wardrobe',
-            description:
-                'Bespoke joinery configured to your room. A consultant will quote after site dimensions.',
-            salesMode: 'quotation_only',
-            specs: 'Custom width · oak or painted finish',
-            imageHint: 'wardrobe',
-            imageUrls: const Value([
-              'assets/showcase/piece_wardrobe.jpg',
-              'assets/showcase/showcase_backwater_bedroom.jpg',
-            ]),
-            modelGlbUrl: const Value('assets/models/wardrobe.glb'),
-            sortCursor: 'p4',
-          ),
-          ProductsCompanion.insert(
-            id: 'prod_rug',
-            categoryId: 'cat_decor',
-            name: 'Hand-knotted wool rug',
-            description: 'New Zealand wool, low pile, stone and sand palette.',
-            salesMode: 'fixed_price',
-            priceMinor: const Value(560000),
-            specs: '240 × 170cm',
-            imageHint: 'rug',
-            imageUrls: const Value([
-              'assets/showcase/piece_wool_rug.jpg',
-              'assets/showcase/show_courtyard_room.jpg',
-            ]),
-            modelGlbUrl: const Value('assets/models/rug.glb'),
-            sortCursor: 'p5',
-          ),
-        ]);
-      });
-
-      await db
-          .into(db.carts)
-          .insert(CartsCompanion.insert(id: guestCartId, totalMinor: 0));
-
-      await db
-          .into(db.appMeta)
-          .insert(AppMetaCompanion.insert(key: 'seeded', value: '1'));
       await _insertUpdates(db);
       await _insertFinance(db);
       await _insertTrackingPhase(db);
+    });
+  }
+
+  /// Public shop catalogue — safe to seed in every build so guests can browse.
+  static Future<void> _insertCatalogue(AppDatabase db) async {
+    await db.batch((batch) {
+      batch.insertAll(db.categories, [
+        CategoriesCompanion.insert(
+          id: 'cat_furniture',
+          name: 'Furniture',
+          sortIndex: 0,
+        ),
+        CategoriesCompanion.insert(
+          id: 'cat_lighting',
+          name: 'Lighting',
+          sortIndex: 1,
+        ),
+        CategoriesCompanion.insert(
+          id: 'cat_storage',
+          name: 'Storage',
+          sortIndex: 2,
+        ),
+        CategoriesCompanion.insert(
+          id: 'cat_decor',
+          name: 'Decor',
+          sortIndex: 3,
+        ),
+      ]);
+      batch.insertAll(db.products, [
+        ProductsCompanion.insert(
+          id: 'prod_oak_table',
+          categoryId: 'cat_furniture',
+          name: 'Oak dining table',
+          description:
+              'Solid European oak, seating eight. Natural oil finish. Made for indoor dining rooms.',
+          salesMode: 'fixed_price',
+          priceMinor: const Value(1850000),
+          specs: 'W 220cm · D 100cm · H 76cm',
+          imageHint: 'table',
+          imageUrls: const Value([
+            'assets/showcase/piece_oak_table.jpg',
+            'assets/showcase/showcase_hillview_dining.jpg',
+          ]),
+          modelGlbUrl: const Value('assets/models/table.glb'),
+          sortCursor: 'p1',
+        ),
+        ProductsCompanion.insert(
+          id: 'prod_linen_sofa',
+          categoryId: 'cat_furniture',
+          name: 'Linen three-seat sofa',
+          description:
+              'Deep-seat sofa in natural linen with kiln-dried hardwood frame and duck-feather wrap.',
+          salesMode: 'fixed_price',
+          priceMinor: const Value(920000),
+          specs: 'W 230cm · D 98cm · H 82cm',
+          imageHint: 'sofa',
+          imageUrls: const Value([
+            'assets/showcase/piece_linen_sofa.jpg',
+            'assets/showcase/show_minimal_room.jpg',
+          ]),
+          modelGlbUrl: const Value('assets/models/sofa.glb'),
+          sortCursor: 'p2',
+        ),
+        ProductsCompanion.insert(
+          id: 'prod_brass_pendant',
+          categoryId: 'cat_lighting',
+          name: 'Brass dome pendant',
+          description:
+              'Hand-spun brass pendant, made to order. Lead time confirmed at serviceability check.',
+          salesMode: 'made_to_order',
+          priceMinor: const Value(240000),
+          specs: 'Diameter 42cm · drop 150cm max',
+          imageHint: 'light',
+          imageUrls: const Value([
+            'assets/showcase/piece_brass_pendant.jpg',
+            'assets/showcase/show_japandi_room.jpg',
+          ]),
+          modelGlbUrl: const Value('assets/models/lamp.glb'),
+          sortCursor: 'p3',
+        ),
+        ProductsCompanion.insert(
+          id: 'prod_wardrobe',
+          categoryId: 'cat_storage',
+          name: 'Walk-in wardrobe',
+          description:
+              'Bespoke joinery configured to your room. A consultant will quote after site dimensions.',
+          salesMode: 'quotation_only',
+          specs: 'Custom width · oak or painted finish',
+          imageHint: 'wardrobe',
+          imageUrls: const Value([
+            'assets/showcase/piece_wardrobe.jpg',
+            'assets/showcase/showcase_backwater_bedroom.jpg',
+          ]),
+          modelGlbUrl: const Value('assets/models/wardrobe.glb'),
+          sortCursor: 'p4',
+        ),
+        ProductsCompanion.insert(
+          id: 'prod_rug',
+          categoryId: 'cat_decor',
+          name: 'Hand-knotted wool rug',
+          description: 'New Zealand wool, low pile, stone and sand palette.',
+          salesMode: 'fixed_price',
+          priceMinor: const Value(560000),
+          specs: '240 × 170cm',
+          imageHint: 'rug',
+          imageUrls: const Value([
+            'assets/showcase/piece_wool_rug.jpg',
+            'assets/showcase/show_courtyard_room.jpg',
+          ]),
+          modelGlbUrl: const Value('assets/models/rug.glb'),
+          sortCursor: 'p5',
+        ),
+      ]);
     });
   }
 

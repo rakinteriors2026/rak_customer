@@ -18,9 +18,53 @@ class PhoneEntryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Fail closed (F-01): with demo mode off there is no sign-in backend, so
+    // show a neutral "service unavailable" state instead of a working bypass.
+    if (!LocalDemoConfig.demoModeEnabled) {
+      return const _SignInUnavailableView();
+    }
     return BlocProvider(
       create: (_) => sl<PhoneEntryCubit>(),
       child: const _PhoneEntryView(),
+    );
+  }
+}
+
+class _SignInUnavailableView extends StatelessWidget {
+  const _SignInUnavailableView();
+
+  @override
+  Widget build(BuildContext context) {
+    final from = AuthReturn.readFrom(GoRouterState.of(context).uri);
+    return RakPage(
+      onBack: from == null
+          ? null
+          : () => context.go(AuthReturn.cancelDestination(from)),
+      header: const RakBrandHeader(),
+      child: ListView(
+        padding: context.figPagePadding,
+        children: [
+          const RakHeroRoom(art: RakHeroArt.welcome),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Sign-in is unavailable',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'This build is not configured for sign-in yet. '
+            'You can still explore the shop.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          RakButton(
+            label: 'Explore the shop',
+            onPressed: () => context.go('/shop'),
+          ),
+        ],
+      ),
     );
   }
 }

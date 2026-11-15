@@ -12,18 +12,28 @@ class AuthLocalDatasource {
     required AppDatabase db,
     required Clock clock,
     Uuid? uuid,
+    bool? demoMode,
   }) : _db = db,
        _clock = clock,
-       _uuid = uuid ?? const Uuid();
+       _uuid = uuid ?? const Uuid(),
+       _demoMode = demoMode ?? LocalDemoConfig.demoModeEnabled;
 
   final AppDatabase _db;
   final Clock _clock;
   final Uuid _uuid;
+  final bool _demoMode;
 
   Future<OtpChallenge> requestOtp({
     required String phone,
     required String purpose,
   }) async {
+    // Fail closed: without demo mode there is no real OTP delivery backend
+    // (see F-18). Never issue or persist the fixed demo code `123456`.
+    if (!_demoMode) {
+      throw const ServiceUnavailableFailure(
+        'Sign-in is not available in this build yet.',
+      );
+    }
     final now = _clock.now().toUtc();
     final id = _uuid.v4();
     final expiresAt = now.add(LocalDemoConfig.otpTtl);
