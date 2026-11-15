@@ -1,8 +1,21 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// F-06: real release signing. The keystore is described in key.properties,
+// which is gitignored and never committed. If it is missing we fail the
+// release build instead of silently falling back to the debug keystore.
+val keystorePropertiesFile = rootProject.file("key.properties")
+val hasKeystore = keystorePropertiesFile.exists()
+val keystoreProperties = Properties()
+if (hasKeystore) {
+    FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
 }
 
 android {
@@ -31,12 +44,53 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String?
+                keyPassword = keystoreProperties["keyPassword"] as String?
+                storeFile = (keystoreProperties["storeFile"] as String?)?.let { file(it) }
+                storePassword = keystoreProperties["storePassword"] as String?
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use the real upload key. Never the debug keystore (F-06).
+            signingConfig = if (hasKeystore) signingConfigs.getByName("release") else null
+
+            // R8: shrink + obfuscate. Keeps live in proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
+    }
+}
+
+// Fail a release assembly/bundle early and clearly if signing is not configured,
+// rather than shipping an unsigned or debug-signed artifact (F-06). This only
+// trips when a release task is actually in the graph, so debug builds and tests
+// are unaffected.
+gradle.taskGraph.whenReady {
+    val buildingRelease = allTasks.any { task ->
+        task.name.contains("Release") &&
+            (
+                task.name.startsWith("assemble") ||
+                    task.name.startsWith("bundle") ||
+                    task.name.startsWith("package")
+            )
+    }
+    if (buildingRelease && !hasKeystore) {
+        throw GradleException(
+            "Release signing is not configured: android/key.properties is missing. " +
+                "Create it (gitignored) with storeFile/storePassword/keyAlias/keyPassword " +
+                "pointing at your upload keystore. The release build must not use the debug keystore. " +
+                "See README.md.",
+        )
     }
 }
 

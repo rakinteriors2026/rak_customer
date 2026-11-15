@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  F-06: Pre-Android 12 (API < 31) auto-backup rules. allowBackup is false so
+  this is belt-and-suspenders, but it still excludes the Drift/SQLite database
+  and flutter_secure_storage / shared prefs from any backup.
+-->
+<full-backup-content>
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="file" />
+    <exclude domain="external" />
+</full-backup-content>
