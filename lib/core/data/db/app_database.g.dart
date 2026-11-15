@@ -2838,6 +2838,48 @@ class $ProductsTable extends Products
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String> imageUrls =
+      GeneratedColumn<String>(
+        'image_urls',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      ).withConverter<List<String>>($ProductsTable.$converterimageUrls);
+  static const VerificationMeta _modelGlbUrlMeta = const VerificationMeta(
+    'modelGlbUrl',
+  );
+  @override
+  late final GeneratedColumn<String> modelGlbUrl = GeneratedColumn<String>(
+    'model_glb_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _modelUsdzUrlMeta = const VerificationMeta(
+    'modelUsdzUrl',
+  );
+  @override
+  late final GeneratedColumn<String> modelUsdzUrl = GeneratedColumn<String>(
+    'model_usdz_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String>
+  spinFrameUrls = GeneratedColumn<String>(
+    'spin_frame_urls',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  ).withConverter<List<String>>($ProductsTable.$converterspinFrameUrls);
   static const VerificationMeta _publishedMeta = const VerificationMeta(
     'published',
   );
@@ -2875,6 +2917,10 @@ class $ProductsTable extends Products
     currency,
     specs,
     imageHint,
+    imageUrls,
+    modelGlbUrl,
+    modelUsdzUrl,
+    spinFrameUrls,
     published,
     sortCursor,
   ];
@@ -2958,6 +3004,24 @@ class $ProductsTable extends Products
     } else if (isInserting) {
       context.missing(_imageHintMeta);
     }
+    if (data.containsKey('model_glb_url')) {
+      context.handle(
+        _modelGlbUrlMeta,
+        modelGlbUrl.isAcceptableOrUnknown(
+          data['model_glb_url']!,
+          _modelGlbUrlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('model_usdz_url')) {
+      context.handle(
+        _modelUsdzUrlMeta,
+        modelUsdzUrl.isAcceptableOrUnknown(
+          data['model_usdz_url']!,
+          _modelUsdzUrlMeta,
+        ),
+      );
+    }
     if (data.containsKey('published')) {
       context.handle(
         _publishedMeta,
@@ -3017,6 +3081,26 @@ class $ProductsTable extends Products
         DriftSqlType.string,
         data['${effectivePrefix}image_hint'],
       )!,
+      imageUrls: $ProductsTable.$converterimageUrls.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}image_urls'],
+        )!,
+      ),
+      modelGlbUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_glb_url'],
+      ),
+      modelUsdzUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_usdz_url'],
+      ),
+      spinFrameUrls: $ProductsTable.$converterspinFrameUrls.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}spin_frame_urls'],
+        )!,
+      ),
       published: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}published'],
@@ -3032,6 +3116,11 @@ class $ProductsTable extends Products
   $ProductsTable createAlias(String alias) {
     return $ProductsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<List<String>, String> $converterimageUrls =
+      const StringListConverter();
+  static TypeConverter<List<String>, String> $converterspinFrameUrls =
+      const StringListConverter();
 }
 
 class ProductRow extends DataClass implements Insertable<ProductRow> {
@@ -3044,6 +3133,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
   final String currency;
   final String specs;
   final String imageHint;
+  final List<String> imageUrls;
+  final String? modelGlbUrl;
+  final String? modelUsdzUrl;
+  final List<String> spinFrameUrls;
   final bool published;
   final String sortCursor;
   const ProductRow({
@@ -3056,6 +3149,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     required this.currency,
     required this.specs,
     required this.imageHint,
+    required this.imageUrls,
+    this.modelGlbUrl,
+    this.modelUsdzUrl,
+    required this.spinFrameUrls,
     required this.published,
     required this.sortCursor,
   });
@@ -3073,6 +3170,22 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     map['currency'] = Variable<String>(currency);
     map['specs'] = Variable<String>(specs);
     map['image_hint'] = Variable<String>(imageHint);
+    {
+      map['image_urls'] = Variable<String>(
+        $ProductsTable.$converterimageUrls.toSql(imageUrls),
+      );
+    }
+    if (!nullToAbsent || modelGlbUrl != null) {
+      map['model_glb_url'] = Variable<String>(modelGlbUrl);
+    }
+    if (!nullToAbsent || modelUsdzUrl != null) {
+      map['model_usdz_url'] = Variable<String>(modelUsdzUrl);
+    }
+    {
+      map['spin_frame_urls'] = Variable<String>(
+        $ProductsTable.$converterspinFrameUrls.toSql(spinFrameUrls),
+      );
+    }
     map['published'] = Variable<bool>(published);
     map['sort_cursor'] = Variable<String>(sortCursor);
     return map;
@@ -3091,6 +3204,14 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       currency: Value(currency),
       specs: Value(specs),
       imageHint: Value(imageHint),
+      imageUrls: Value(imageUrls),
+      modelGlbUrl: modelGlbUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelGlbUrl),
+      modelUsdzUrl: modelUsdzUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelUsdzUrl),
+      spinFrameUrls: Value(spinFrameUrls),
       published: Value(published),
       sortCursor: Value(sortCursor),
     );
@@ -3111,6 +3232,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       currency: serializer.fromJson<String>(json['currency']),
       specs: serializer.fromJson<String>(json['specs']),
       imageHint: serializer.fromJson<String>(json['imageHint']),
+      imageUrls: serializer.fromJson<List<String>>(json['imageUrls']),
+      modelGlbUrl: serializer.fromJson<String?>(json['modelGlbUrl']),
+      modelUsdzUrl: serializer.fromJson<String?>(json['modelUsdzUrl']),
+      spinFrameUrls: serializer.fromJson<List<String>>(json['spinFrameUrls']),
       published: serializer.fromJson<bool>(json['published']),
       sortCursor: serializer.fromJson<String>(json['sortCursor']),
     );
@@ -3128,6 +3253,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       'currency': serializer.toJson<String>(currency),
       'specs': serializer.toJson<String>(specs),
       'imageHint': serializer.toJson<String>(imageHint),
+      'imageUrls': serializer.toJson<List<String>>(imageUrls),
+      'modelGlbUrl': serializer.toJson<String?>(modelGlbUrl),
+      'modelUsdzUrl': serializer.toJson<String?>(modelUsdzUrl),
+      'spinFrameUrls': serializer.toJson<List<String>>(spinFrameUrls),
       'published': serializer.toJson<bool>(published),
       'sortCursor': serializer.toJson<String>(sortCursor),
     };
@@ -3143,6 +3272,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     String? currency,
     String? specs,
     String? imageHint,
+    List<String>? imageUrls,
+    Value<String?> modelGlbUrl = const Value.absent(),
+    Value<String?> modelUsdzUrl = const Value.absent(),
+    List<String>? spinFrameUrls,
     bool? published,
     String? sortCursor,
   }) => ProductRow(
@@ -3155,6 +3288,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     currency: currency ?? this.currency,
     specs: specs ?? this.specs,
     imageHint: imageHint ?? this.imageHint,
+    imageUrls: imageUrls ?? this.imageUrls,
+    modelGlbUrl: modelGlbUrl.present ? modelGlbUrl.value : this.modelGlbUrl,
+    modelUsdzUrl: modelUsdzUrl.present ? modelUsdzUrl.value : this.modelUsdzUrl,
+    spinFrameUrls: spinFrameUrls ?? this.spinFrameUrls,
     published: published ?? this.published,
     sortCursor: sortCursor ?? this.sortCursor,
   );
@@ -3175,6 +3312,16 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
       currency: data.currency.present ? data.currency.value : this.currency,
       specs: data.specs.present ? data.specs.value : this.specs,
       imageHint: data.imageHint.present ? data.imageHint.value : this.imageHint,
+      imageUrls: data.imageUrls.present ? data.imageUrls.value : this.imageUrls,
+      modelGlbUrl: data.modelGlbUrl.present
+          ? data.modelGlbUrl.value
+          : this.modelGlbUrl,
+      modelUsdzUrl: data.modelUsdzUrl.present
+          ? data.modelUsdzUrl.value
+          : this.modelUsdzUrl,
+      spinFrameUrls: data.spinFrameUrls.present
+          ? data.spinFrameUrls.value
+          : this.spinFrameUrls,
       published: data.published.present ? data.published.value : this.published,
       sortCursor: data.sortCursor.present
           ? data.sortCursor.value
@@ -3194,6 +3341,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
           ..write('currency: $currency, ')
           ..write('specs: $specs, ')
           ..write('imageHint: $imageHint, ')
+          ..write('imageUrls: $imageUrls, ')
+          ..write('modelGlbUrl: $modelGlbUrl, ')
+          ..write('modelUsdzUrl: $modelUsdzUrl, ')
+          ..write('spinFrameUrls: $spinFrameUrls, ')
           ..write('published: $published, ')
           ..write('sortCursor: $sortCursor')
           ..write(')'))
@@ -3211,6 +3362,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
     currency,
     specs,
     imageHint,
+    imageUrls,
+    modelGlbUrl,
+    modelUsdzUrl,
+    spinFrameUrls,
     published,
     sortCursor,
   );
@@ -3227,6 +3382,10 @@ class ProductRow extends DataClass implements Insertable<ProductRow> {
           other.currency == this.currency &&
           other.specs == this.specs &&
           other.imageHint == this.imageHint &&
+          other.imageUrls == this.imageUrls &&
+          other.modelGlbUrl == this.modelGlbUrl &&
+          other.modelUsdzUrl == this.modelUsdzUrl &&
+          other.spinFrameUrls == this.spinFrameUrls &&
           other.published == this.published &&
           other.sortCursor == this.sortCursor);
 }
@@ -3241,6 +3400,10 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
   final Value<String> currency;
   final Value<String> specs;
   final Value<String> imageHint;
+  final Value<List<String>> imageUrls;
+  final Value<String?> modelGlbUrl;
+  final Value<String?> modelUsdzUrl;
+  final Value<List<String>> spinFrameUrls;
   final Value<bool> published;
   final Value<String> sortCursor;
   final Value<int> rowid;
@@ -3254,6 +3417,10 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
     this.currency = const Value.absent(),
     this.specs = const Value.absent(),
     this.imageHint = const Value.absent(),
+    this.imageUrls = const Value.absent(),
+    this.modelGlbUrl = const Value.absent(),
+    this.modelUsdzUrl = const Value.absent(),
+    this.spinFrameUrls = const Value.absent(),
     this.published = const Value.absent(),
     this.sortCursor = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3268,6 +3435,10 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
     this.currency = const Value.absent(),
     required String specs,
     required String imageHint,
+    this.imageUrls = const Value.absent(),
+    this.modelGlbUrl = const Value.absent(),
+    this.modelUsdzUrl = const Value.absent(),
+    this.spinFrameUrls = const Value.absent(),
     this.published = const Value.absent(),
     required String sortCursor,
     this.rowid = const Value.absent(),
@@ -3289,6 +3460,10 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
     Expression<String>? currency,
     Expression<String>? specs,
     Expression<String>? imageHint,
+    Expression<String>? imageUrls,
+    Expression<String>? modelGlbUrl,
+    Expression<String>? modelUsdzUrl,
+    Expression<String>? spinFrameUrls,
     Expression<bool>? published,
     Expression<String>? sortCursor,
     Expression<int>? rowid,
@@ -3303,6 +3478,10 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
       if (currency != null) 'currency': currency,
       if (specs != null) 'specs': specs,
       if (imageHint != null) 'image_hint': imageHint,
+      if (imageUrls != null) 'image_urls': imageUrls,
+      if (modelGlbUrl != null) 'model_glb_url': modelGlbUrl,
+      if (modelUsdzUrl != null) 'model_usdz_url': modelUsdzUrl,
+      if (spinFrameUrls != null) 'spin_frame_urls': spinFrameUrls,
       if (published != null) 'published': published,
       if (sortCursor != null) 'sort_cursor': sortCursor,
       if (rowid != null) 'rowid': rowid,
@@ -3319,6 +3498,10 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
     Value<String>? currency,
     Value<String>? specs,
     Value<String>? imageHint,
+    Value<List<String>>? imageUrls,
+    Value<String?>? modelGlbUrl,
+    Value<String?>? modelUsdzUrl,
+    Value<List<String>>? spinFrameUrls,
     Value<bool>? published,
     Value<String>? sortCursor,
     Value<int>? rowid,
@@ -3333,6 +3516,10 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
       currency: currency ?? this.currency,
       specs: specs ?? this.specs,
       imageHint: imageHint ?? this.imageHint,
+      imageUrls: imageUrls ?? this.imageUrls,
+      modelGlbUrl: modelGlbUrl ?? this.modelGlbUrl,
+      modelUsdzUrl: modelUsdzUrl ?? this.modelUsdzUrl,
+      spinFrameUrls: spinFrameUrls ?? this.spinFrameUrls,
       published: published ?? this.published,
       sortCursor: sortCursor ?? this.sortCursor,
       rowid: rowid ?? this.rowid,
@@ -3369,6 +3556,22 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
     if (imageHint.present) {
       map['image_hint'] = Variable<String>(imageHint.value);
     }
+    if (imageUrls.present) {
+      map['image_urls'] = Variable<String>(
+        $ProductsTable.$converterimageUrls.toSql(imageUrls.value),
+      );
+    }
+    if (modelGlbUrl.present) {
+      map['model_glb_url'] = Variable<String>(modelGlbUrl.value);
+    }
+    if (modelUsdzUrl.present) {
+      map['model_usdz_url'] = Variable<String>(modelUsdzUrl.value);
+    }
+    if (spinFrameUrls.present) {
+      map['spin_frame_urls'] = Variable<String>(
+        $ProductsTable.$converterspinFrameUrls.toSql(spinFrameUrls.value),
+      );
+    }
     if (published.present) {
       map['published'] = Variable<bool>(published.value);
     }
@@ -3393,6 +3596,10 @@ class ProductsCompanion extends UpdateCompanion<ProductRow> {
           ..write('currency: $currency, ')
           ..write('specs: $specs, ')
           ..write('imageHint: $imageHint, ')
+          ..write('imageUrls: $imageUrls, ')
+          ..write('modelGlbUrl: $modelGlbUrl, ')
+          ..write('modelUsdzUrl: $modelUsdzUrl, ')
+          ..write('spinFrameUrls: $spinFrameUrls, ')
           ..write('published: $published, ')
           ..write('sortCursor: $sortCursor, ')
           ..write('rowid: $rowid')
@@ -15301,6 +15508,10 @@ typedef $$ProductsTableCreateCompanionBuilder =
       Value<String> currency,
       required String specs,
       required String imageHint,
+      Value<List<String>> imageUrls,
+      Value<String?> modelGlbUrl,
+      Value<String?> modelUsdzUrl,
+      Value<List<String>> spinFrameUrls,
       Value<bool> published,
       required String sortCursor,
       Value<int> rowid,
@@ -15316,6 +15527,10 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<String> currency,
       Value<String> specs,
       Value<String> imageHint,
+      Value<List<String>> imageUrls,
+      Value<String?> modelGlbUrl,
+      Value<String?> modelUsdzUrl,
+      Value<List<String>> spinFrameUrls,
       Value<bool> published,
       Value<String> sortCursor,
       Value<int> rowid,
@@ -15408,6 +15623,28 @@ class $$ProductsTableFilterComposer
   ColumnFilters<String> get imageHint => $composableBuilder(
     column: $table.imageHint,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get imageUrls => $composableBuilder(
+    column: $table.imageUrls,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get modelGlbUrl => $composableBuilder(
+    column: $table.modelGlbUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelUsdzUrl => $composableBuilder(
+    column: $table.modelUsdzUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get spinFrameUrls => $composableBuilder(
+    column: $table.spinFrameUrls,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<bool> get published => $composableBuilder(
@@ -15518,6 +15755,26 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageUrls => $composableBuilder(
+    column: $table.imageUrls,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelGlbUrl => $composableBuilder(
+    column: $table.modelGlbUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelUsdzUrl => $composableBuilder(
+    column: $table.modelUsdzUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get spinFrameUrls => $composableBuilder(
+    column: $table.spinFrameUrls,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get published => $composableBuilder(
     column: $table.published,
     builder: (column) => ColumnOrderings(column),
@@ -15588,6 +15845,25 @@ class $$ProductsTableAnnotationComposer
 
   GeneratedColumn<String> get imageHint =>
       $composableBuilder(column: $table.imageHint, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get imageUrls =>
+      $composableBuilder(column: $table.imageUrls, builder: (column) => column);
+
+  GeneratedColumn<String> get modelGlbUrl => $composableBuilder(
+    column: $table.modelGlbUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modelUsdzUrl => $composableBuilder(
+    column: $table.modelUsdzUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get spinFrameUrls =>
+      $composableBuilder(
+        column: $table.spinFrameUrls,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<bool> get published =>
       $composableBuilder(column: $table.published, builder: (column) => column);
@@ -15683,6 +15959,10 @@ class $$ProductsTableTableManager
                 Value<String> currency = const Value.absent(),
                 Value<String> specs = const Value.absent(),
                 Value<String> imageHint = const Value.absent(),
+                Value<List<String>> imageUrls = const Value.absent(),
+                Value<String?> modelGlbUrl = const Value.absent(),
+                Value<String?> modelUsdzUrl = const Value.absent(),
+                Value<List<String>> spinFrameUrls = const Value.absent(),
                 Value<bool> published = const Value.absent(),
                 Value<String> sortCursor = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -15696,6 +15976,10 @@ class $$ProductsTableTableManager
                 currency: currency,
                 specs: specs,
                 imageHint: imageHint,
+                imageUrls: imageUrls,
+                modelGlbUrl: modelGlbUrl,
+                modelUsdzUrl: modelUsdzUrl,
+                spinFrameUrls: spinFrameUrls,
                 published: published,
                 sortCursor: sortCursor,
                 rowid: rowid,
@@ -15711,6 +15995,10 @@ class $$ProductsTableTableManager
                 Value<String> currency = const Value.absent(),
                 required String specs,
                 required String imageHint,
+                Value<List<String>> imageUrls = const Value.absent(),
+                Value<String?> modelGlbUrl = const Value.absent(),
+                Value<String?> modelUsdzUrl = const Value.absent(),
+                Value<List<String>> spinFrameUrls = const Value.absent(),
                 Value<bool> published = const Value.absent(),
                 required String sortCursor,
                 Value<int> rowid = const Value.absent(),
@@ -15724,6 +16012,10 @@ class $$ProductsTableTableManager
                 currency: currency,
                 specs: specs,
                 imageHint: imageHint,
+                imageUrls: imageUrls,
+                modelGlbUrl: modelGlbUrl,
+                modelUsdzUrl: modelUsdzUrl,
+                spinFrameUrls: spinFrameUrls,
                 published: published,
                 sortCursor: sortCursor,
                 rowid: rowid,

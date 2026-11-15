@@ -8,6 +8,8 @@ import 'package:rak_customer/core/domain/repositories/asset_access_repository.da
 import 'package:rak_customer/core/domain/repositories/auth_repository.dart';
 import 'package:rak_customer/core/domain/repositories/cart_count_repository.dart';
 import 'package:rak_customer/core/domain/repositories/home_project_repository.dart';
+import 'package:rak_customer/core/domain/repositories/home_service_repository.dart';
+import 'package:rak_customer/core/domain/repositories/home_showcase_repository.dart';
 import 'package:rak_customer/core/domain/repositories/shop_branch_repository.dart';
 import 'package:rak_customer/core/storage/secure_session_storage.dart';
 import 'package:rak_customer/core/storage/session_storage.dart';
@@ -99,6 +101,22 @@ import 'package:rak_customer/features/support/domain/usecases/get_support_contex
 import 'package:rak_customer/features/support/domain/usecases/get_support_queries.dart';
 import 'package:rak_customer/features/support/domain/usecases/get_support_query.dart';
 import 'package:rak_customer/features/support/domain/usecases/update_support_status.dart';
+import 'package:rak_customer/features/showcase/data/datasources/showcase_local_datasource.dart';
+import 'package:rak_customer/features/showcase/data/repositories/home_showcase_repository_impl.dart';
+import 'package:rak_customer/features/showcase/data/repositories/showcase_repository_impl.dart';
+import 'package:rak_customer/features/showcase/domain/repositories/showcase_repository.dart';
+import 'package:rak_customer/features/showcase/domain/usecases/get_showcase_project.dart';
+import 'package:rak_customer/features/showcase/domain/usecases/get_showcase_projects.dart';
+import 'package:rak_customer/features/showcase/presentation/cubit/showcase_detail_cubit.dart';
+import 'package:rak_customer/features/showcase/presentation/cubit/showcase_list_cubit.dart';
+import 'package:rak_customer/features/services/data/datasources/service_local_datasource.dart';
+import 'package:rak_customer/features/services/data/repositories/home_service_repository_impl.dart';
+import 'package:rak_customer/features/services/data/repositories/service_repository_impl.dart';
+import 'package:rak_customer/features/services/domain/repositories/service_repository.dart';
+import 'package:rak_customer/features/services/domain/usecases/get_service.dart';
+import 'package:rak_customer/features/services/domain/usecases/get_services.dart';
+import 'package:rak_customer/features/services/presentation/cubit/service_detail_cubit.dart';
+import 'package:rak_customer/features/services/presentation/cubit/service_list_cubit.dart';
 import 'package:rak_customer/features/updates/data/datasources/updates_local_datasource.dart';
 import 'package:rak_customer/features/updates/data/repositories/updates_repository_impl.dart';
 import 'package:rak_customer/features/updates/domain/repositories/updates_repository.dart';
@@ -187,6 +205,30 @@ Future<void> configureDependencies({
   sl.registerLazySingleton(() => GetProductEnquiry(sl()));
   sl.registerLazySingleton(() => ListProductEnquiries(sl()));
   sl.registerLazySingleton(() => UpdateEnquiryStatus(sl()));
+
+  sl.registerLazySingleton(() => const ShowcaseLocalDatasource());
+  sl.registerLazySingleton<ShowcaseRepository>(
+    () => ShowcaseRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<HomeShowcaseRepository>(
+    () => HomeShowcaseRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => GetShowcaseProjects(sl()));
+  sl.registerLazySingleton(() => GetShowcaseProject(sl()));
+  sl.registerFactory(() => ShowcaseDetailCubit(getShowcaseProject: sl()));
+  sl.registerFactory(() => ShowcaseListCubit(getShowcaseProjects: sl()));
+
+  sl.registerLazySingleton(() => const ServiceLocalDatasource());
+  sl.registerLazySingleton<ServiceRepository>(
+    () => ServiceRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<HomeServiceRepository>(
+    () => HomeServiceRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => GetServices(sl()));
+  sl.registerLazySingleton(() => GetService(sl()));
+  sl.registerFactory(() => ServiceListCubit(getServices: sl()));
+  sl.registerFactory(() => ServiceDetailCubit(getService: sl()));
 
   sl.registerLazySingleton(() => CartLocalDatasource(sl()));
   sl.registerLazySingleton<CartRepository>(() => CartRepositoryImpl(sl()));

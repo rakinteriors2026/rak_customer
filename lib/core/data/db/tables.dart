@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:rak_customer/core/data/db/converters.dart';
 
 @DataClassName('AccountRow')
 class Accounts extends Table {
@@ -93,6 +94,12 @@ class Products extends Table {
   TextColumn get currency => text().withDefault(const Constant('INR'))();
   TextColumn get specs => text()();
   TextColumn get imageHint => text()();
+  TextColumn get imageUrls =>
+      text().map(const StringListConverter()).withDefault(const Constant('[]'))();
+  TextColumn get modelGlbUrl => text().nullable()();
+  TextColumn get modelUsdzUrl => text().nullable()();
+  TextColumn get spinFrameUrls =>
+      text().map(const StringListConverter()).withDefault(const Constant('[]'))();
   BoolColumn get published => boolean().withDefault(const Constant(true))();
   TextColumn get sortCursor => text()();
 

@@ -696,7 +696,7 @@ class _FloorPlacementState extends State<_FloorPlacement> {
         return;
       }
       _placed.add(anchor);
-      final model = FurnitureArCatalog.armchair;
+      final model = FurnitureArCatalog.forHint(widget.imageHint);
       final ios = !kIsWeb && Platform.isIOS;
       final String uri;
       final NodeType type;
@@ -766,11 +766,11 @@ class _FloorPlacementState extends State<_FloorPlacement> {
     return name;
   }
 
-  /// Puts the armchair on the floor at its real size. Finger gestures move it after that.
+  /// Puts the piece on the floor at its real size. Finger gestures move it after that.
   void _applyPose() {
     final piece = _piece;
     if (piece == null) return;
-    piece.transform = FurnitureArCatalog.armchair.pose(
+    piece.transform = FurnitureArCatalog.forHint(widget.imageHint).pose(
       ios: !kIsWeb && Platform.isIOS,
       pitch: _pitch,
       yaw: _yaw,
@@ -781,7 +781,7 @@ class _FloorPlacementState extends State<_FloorPlacement> {
   }
 
   String get _instruction {
-    final piece = FurnitureArCatalog.armchair.name;
+    final piece = FurnitureArCatalog.forHint(widget.imageHint).name;
     if (_notice != null) return _notice!;
     if (_placedCount > 0) {
       return 'Drag with one finger to move the $piece. Twist with two fingers to turn it.';

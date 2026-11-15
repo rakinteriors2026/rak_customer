@@ -33,8 +33,6 @@ class FigText extends StatelessWidget {
         height: scaled.height,
         fontFamily: scaled.fontFamily,
         fontWeight: scaled.fontWeight,
-        leading: 0,
-        forceStrutHeight: true,
       ),
     );
   }

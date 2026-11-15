@@ -41,6 +41,10 @@ import 'package:rak_customer/features/projects/presentation/pages/project_list_p
 import 'package:rak_customer/features/projects/presentation/pages/project_section_page.dart';
 import 'package:rak_customer/features/projects/presentation/pages/project_timeline_page.dart';
 import 'package:rak_customer/features/projects/presentation/pages/review_pages.dart';
+import 'package:rak_customer/features/services/presentation/pages/service_detail_page.dart';
+import 'package:rak_customer/features/services/presentation/pages/services_page.dart';
+import 'package:rak_customer/features/showcase/presentation/pages/showcase_detail_page.dart';
+import 'package:rak_customer/features/showcase/presentation/pages/showcase_list_page.dart';
 import 'package:rak_customer/features/support/presentation/pages/create_query_page.dart';
 import 'package:rak_customer/features/support/presentation/pages/support_detail_page.dart';
 import 'package:rak_customer/features/support/presentation/pages/support_list_page.dart';
@@ -157,6 +161,31 @@ GoRouter createRouter(SessionCubit sessionCubit) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/showcase',
+                builder: (context, state) => const ShowcaseListPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/projects',
+                builder: (context, state) {
+                  final accountId = _accountId(sessionCubit);
+                  if (accountId == null) {
+                    return HomePage(
+                      displayName: _displayName(sessionCubit),
+                      accountId: null,
+                    );
+                  }
+                  return ProjectListPage(accountId: accountId);
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/shop',
                 builder: (context, state) => CataloguePage(
                   watchCartCount: () => sl<CartCountRepository>().watch(
@@ -200,6 +229,10 @@ GoRouter createRouter(SessionCubit sessionCubit) {
                           imageHint:
                               state.uri.queryParameters['hint'] ?? 'chair',
                           specs: state.uri.queryParameters['specs'],
+                          imageUrl: state.uri.queryParameters['img'],
+                          hasModel:
+                              state.uri.queryParameters['model'] == 'true',
+                          hasSpin: state.uri.queryParameters['spin'] == 'true',
                         ),
                         routes: [
                           GoRoute(
@@ -293,114 +326,6 @@ GoRouter createRouter(SessionCubit sessionCubit) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/cart',
-                builder: (context, state) =>
-                    CartPage(accountId: _accountId(sessionCubit)),
-              ),
-              GoRoute(
-                path: '/checkout',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return CheckoutPage(accountId: accountId);
-                },
-              ),
-              GoRoute(
-                path: '/checkout/pay',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return PaymentProviderPage(accountId: accountId);
-                },
-              ),
-              GoRoute(
-                path: '/checkout/pending',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return PaymentPendingPage(accountId: accountId);
-                },
-              ),
-              GoRoute(
-                path: '/checkout/confirmed',
-                builder: (context, state) {
-                  final order = state.extra;
-                  if (order is! ShopOrder) return const MissingOrderPage();
-                  return OrderConfirmedPage(
-                    order: order,
-                    displayName: _displayName(sessionCubit),
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/checkout/failed',
-                builder: (context, state) {
-                  final extra = state.extra;
-                  if (extra is PaymentFailedArgs) {
-                    return PaymentFailedPage(
-                      message: extra.message,
-                      amountLabel: extra.amountLabel,
-                    );
-                  }
-                  return PaymentFailedPage(
-                    message: extra is String ? extra : null,
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/address',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return AddressPage(accountId: accountId);
-                },
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/orders',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return OrdersListPage(accountId: accountId);
-                },
-              ),
-              GoRoute(
-                path: '/orders/:id',
-                builder: (context, state) {
-                  final accountId = _accountId(sessionCubit);
-                  if (accountId == null) return const SizedBox.shrink();
-                  return OrderTrackingPage(
-                    accountId: accountId,
-                    orderId: state.pathParameters['id']!,
-                  );
-                },
-                routes: [
-                  GoRoute(
-                    path: 'help',
-                    builder: (context, state) =>
-                        OrderHelpPage(orderId: state.pathParameters['id']!),
-                  ),
-                  GoRoute(
-                    path: 'cancellation',
-                    builder: (context, state) {
-                      final accountId = _accountId(sessionCubit);
-                      if (accountId == null) return const SizedBox.shrink();
-                      return CancellationRequestedPage(
-                        accountId: accountId,
-                        orderId: state.pathParameters['id']!,
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
                 path: '/account',
                 builder: (context, state) => const AccountPage(),
                 routes: [
@@ -447,19 +372,111 @@ GoRouter createRouter(SessionCubit sessionCubit) {
         ],
       ),
       GoRoute(
+        path: '/cart',
+        builder: (context, state) =>
+            CartPage(accountId: _accountId(sessionCubit)),
+      ),
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return CheckoutPage(accountId: accountId);
+        },
+      ),
+      GoRoute(
+        path: '/checkout/pay',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return PaymentProviderPage(accountId: accountId);
+        },
+      ),
+      GoRoute(
+        path: '/checkout/pending',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return PaymentPendingPage(accountId: accountId);
+        },
+      ),
+      GoRoute(
+        path: '/checkout/confirmed',
+        builder: (context, state) {
+          final order = state.extra;
+          if (order is! ShopOrder) return const MissingOrderPage();
+          return OrderConfirmedPage(
+            order: order,
+            displayName: _displayName(sessionCubit),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/checkout/failed',
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is PaymentFailedArgs) {
+            return PaymentFailedPage(
+              message: extra.message,
+              amountLabel: extra.amountLabel,
+            );
+          }
+          return PaymentFailedPage(
+            message: extra is String ? extra : null,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/address',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return AddressPage(accountId: accountId);
+        },
+      ),
+      GoRoute(
+        path: '/orders',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return OrdersListPage(accountId: accountId);
+        },
+      ),
+      GoRoute(
+        path: '/orders/:id',
+        builder: (context, state) {
+          final accountId = _accountId(sessionCubit);
+          if (accountId == null) return const SizedBox.shrink();
+          return OrderTrackingPage(
+            accountId: accountId,
+            orderId: state.pathParameters['id']!,
+          );
+        },
+        routes: [
+          GoRoute(
+            path: 'help',
+            builder: (context, state) =>
+                OrderHelpPage(orderId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'cancellation',
+            builder: (context, state) {
+              final accountId = _accountId(sessionCubit);
+              if (accountId == null) return const SizedBox.shrink();
+              return CancellationRequestedPage(
+                accountId: accountId,
+                orderId: state.pathParameters['id']!,
+              );
+            },
+          ),
+        ],
+      ),
+      GoRoute(
         path: '/projects/overview',
         builder: (context, state) => HomePage(
           displayName: _displayName(sessionCubit),
           accountId: _accountId(sessionCubit),
         ),
-      ),
-      GoRoute(
-        path: '/projects',
-        builder: (context, state) {
-          final accountId = _accountId(sessionCubit);
-          if (accountId == null) return const SizedBox.shrink();
-          return ProjectListPage(accountId: accountId);
-        },
       ),
       GoRoute(
         path: '/projects/:id/handover',
@@ -708,6 +725,20 @@ GoRouter createRouter(SessionCubit sessionCubit) {
       GoRoute(
         path: '/access-denied',
         builder: (context, state) => const AccessDeniedPage(),
+      ),
+      GoRoute(
+        path: '/showcase/:id',
+        builder: (context, state) =>
+            ShowcaseDetailPage(projectId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/services',
+        builder: (context, state) => const ServicesPage(),
+      ),
+      GoRoute(
+        path: '/services/:id',
+        builder: (context, state) =>
+            ServiceDetailPage(serviceId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/sales-kit',

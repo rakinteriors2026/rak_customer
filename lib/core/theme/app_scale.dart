@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:rak_customer/core/theme/app_layout.dart';
 
@@ -35,15 +37,21 @@ extension AppScaleX on BuildContext {
 
   double get productCardExtent {
     final textScale = MediaQuery.textScalerOf(this).scale(1).clamp(1.0, 3.0);
-    final art = s(AppLayout.productArtHeight);
-    final padding = s(22);
-    // Label is 14/18 and caption is 12/16. Type is not width-scaled.
-    final name = 18 * textScale * 2;
-    final price = 18 * textScale;
-    final stock = 16 * textScale;
-    final gaps = s(10);
-    // Text line boxes can round a fraction taller than the sizes above.
-    return art + padding + name + price + stock + gaps + 2;
+    // Rows that mix a figScale-sized widget (icon/chip) with scaling text are
+    // bounded by the taller of the two, so the card fits at any text/display
+    // scale without leaving slack at the design scale.
+    double row(double figPx, double textPx) =>
+        math.max(s(figPx), textPx * textScale);
+
+    final art = s(140.0);
+    final padding = s(16.0); // content padding: top 8 + bottom 8
+    final gaps = s(12.0); // inter-element gaps: 3 + 3 + 6
+    final name = 36.0 * textScale; // two lines × 18
+    final material = row(14.0, 14.0); // sparkle icon + finish text
+    final specs = 13.0 * textScale; // dimensions / delivery line
+    final price = row(26.0, 16.0); // price text + circular CTA chip
+
+    return art + padding + gaps + name + material + specs + price;
   }
 }
 

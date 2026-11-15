@@ -29,6 +29,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // — Signed-out guest view —
     if (accountId == null) {
       return RakPage(
         header: const RakBrandHeader(),
@@ -42,30 +43,30 @@ class HomePage extends StatelessWidget {
         child: ListView(
           padding: context.figPagePadding,
           children: [
+            SizedBox(height: context.s(8)),
             const RakHeroRoom(art: RakHeroArt.welcome),
-            const SizedBox(height: AppSpacing.md),
+            SizedBox(height: context.s(AppSpacing.lg)),
             Text(
               'Your home.\nEvery step, closer.',
               style: Theme.of(context).textTheme.displaySmall,
             ),
-            const SizedBox(height: AppSpacing.xs),
+            SizedBox(height: context.s(AppSpacing.xs)),
             Text(
               'Follow your interior project and find considered pieces for your space.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            RakButton(
-              label: 'Sign in',
-              onPressed: () =>
-                  context.push(
-                    AuthReturn.loginLocation(from: '/projects/overview'),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.muted,
                   ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            SizedBox(height: context.s(AppSpacing.lg)),
             RakButton(
-              label: 'Find something for your home',
+              label: 'Sign in',
+              onPressed: () => context.push(
+                AuthReturn.loginLocation(from: '/projects/overview'),
+              ),
+            ),
+            SizedBox(height: context.s(AppSpacing.sm)),
+            RakButton(
+              label: 'Browse the shop',
               style: RakButtonStyle.secondary,
               onPressed: () => context.go('/shop'),
             ),
@@ -74,11 +75,10 @@ class HomePage extends StatelessWidget {
       );
     }
 
+    // — Signed-in view —
     return BlocProvider(
       create: (_) => sl<ProjectListCubit>()..load(accountId!),
       child: RakPage(
-        title: 'Welcome home, ${PhoneFormatter.firstName(displayName)}',
-        subtitle: 'Your space. Your choices.',
         onBack: () {
           if (context.canPop()) {
             context.pop();
@@ -86,15 +86,20 @@ class HomePage extends StatelessWidget {
             context.go('/account');
           }
         },
-        child: _SignedInHome(accountId: accountId!),
+        child: _SignedInHome(
+          accountId: accountId!,
+          firstName: PhoneFormatter.firstName(displayName),
+        ),
       ),
     );
   }
 }
 
 class _SignedInHome extends StatelessWidget {
-  const _SignedInHome({required this.accountId});
+  const _SignedInHome({required this.accountId, required this.firstName});
+
   final String accountId;
+  final String firstName;
 
   @override
   Widget build(BuildContext context) {
@@ -103,96 +108,182 @@ class _SignedInHome extends StatelessWidget {
         return switch (state) {
           ProjectListLoading() => const AppLoading(),
           ProjectListError(:final message) => AppErrorState(
-            message: message,
-            onRetry: () => context.read<ProjectListCubit>().load(accountId),
-          ),
-          ProjectListEmpty() => ListView(
-            padding: context.figPagePadding,
-            children: [
-              const RakHeroRoom(art: RakHeroArt.home, editorial: true),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Your RAK journey starts here.',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'You can still explore and shop. If you already have a RAK project, contact us to verify the registered mobile number.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              RakButton(
-                label: 'How can we help?',
-                onPressed: () => context.go('/support'),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              RakButton(
-                label: 'Find something for your home',
-                style: RakButtonStyle.secondary,
-                onPressed: () => context.go('/shop'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const _SalesKitPromo(),
-            ],
-          ),
+              message: message,
+              onRetry: () =>
+                  context.read<ProjectListCubit>().load(accountId),
+            ),
+          ProjectListEmpty() => _EmptyHome(firstName: firstName),
           ProjectListLoaded(:final projects) => _ProjectHome(
-            project: projects.first,
-          ),
+              project: projects.first,
+              firstName: firstName,
+            ),
         };
       },
     );
   }
 }
 
+// ─── Empty state (signed-in, no project) ────────────────────────────────────
+
+class _EmptyHome extends StatelessWidget {
+  const _EmptyHome({required this.firstName});
+
+  final String firstName;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: context.figPagePadding,
+      children: [
+        SizedBox(height: context.s(8)),
+
+        // Greeting
+        FigText('Hi, $firstName.', style: AppText.heading),
+        SizedBox(height: context.s(4)),
+        FigText(
+          'Welcome to RAK.',
+          style: AppText.body,
+          color: AppColors.muted,
+        ),
+
+        SizedBox(height: context.s(AppSpacing.lg)),
+        const RakHeroRoom(art: RakHeroArt.home, editorial: true),
+        SizedBox(height: context.s(AppSpacing.lg)),
+
+        FigText(
+          'No project linked yet',
+          style: AppText.screenTitle,
+        ),
+        SizedBox(height: context.s(AppSpacing.xs)),
+        FigText(
+          'If you have a RAK project, contact us to verify the mobile number on record.',
+          style: AppText.body,
+          color: AppColors.muted,
+        ),
+        SizedBox(height: context.s(AppSpacing.lg)),
+
+        // Actions
+        RakButton(
+          label: 'How can we help?',
+          onPressed: () => context.go('/support'),
+        ),
+        SizedBox(height: context.s(AppSpacing.sm)),
+        RakButton(
+          label: 'Browse the shop',
+          style: RakButtonStyle.secondary,
+          onPressed: () => context.go('/shop'),
+        ),
+
+        SizedBox(height: context.s(AppSpacing.xl)),
+        const _SalesKitPromo(),
+      ],
+    );
+  }
+}
+
+// ─── Project home (signed-in, has project) ──────────────────────────────────
+
 class _ProjectHome extends StatelessWidget {
-  const _ProjectHome({required this.project});
+  const _ProjectHome({required this.project, required this.firstName});
+
   final InteriorProject project;
+  final String firstName;
 
   @override
   Widget build(BuildContext context) {
     final progress = project.progressPercent;
-    final handover = project.forecastHandoverAt ?? project.targetHandoverAt;
+    final handover =
+        project.forecastHandoverAt ?? project.targetHandoverAt;
+
     return ListView(
       padding: context.figPagePadding,
       children: [
-        const RakHeroRoom(art: RakHeroArt.home, editorial: true),
-        const SizedBox(height: AppSpacing.lg),
-        FigText('Your project', style: AppText.caption, color: AppColors.muted),
-        SizedBox(height: context.s(4)),
+        SizedBox(height: context.s(8)),
+
+        // ── Greeting ──────────────────────────────────────────────────────
+        FigText('Hi, $firstName.', style: AppText.heading),
+        SizedBox(height: context.s(AppSpacing.sm)),
+
+        // ── Project card ──────────────────────────────────────────────────
         GestureDetector(
           onTap: () => context.go('/projects'),
           behavior: HitTestBehavior.opaque,
-          child: FigText(project.name, style: AppText.heading),
-        ),
-        SizedBox(height: context.s(12)),
-        Row(
-          children: [
-            Expanded(
-              child: FigText(
-                project.phaseLabel,
-                style: AppText.body,
-                color: AppColors.muted,
-              ),
+          child: Container(
+            padding: EdgeInsets.all(context.s(16)),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(context.s(16)),
+              border: Border.all(color: AppColors.line),
             ),
-            if (progress != null) FigText('$progress%', style: AppText.label),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FigText(
+                            'Your project',
+                            style: AppText.caption,
+                            color: AppColors.muted,
+                          ),
+                          SizedBox(height: context.s(2)),
+                          FigText(project.name, style: AppText.title),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      CupertinoIcons.chevron_right,
+                      size: context.s(14),
+                      color: AppColors.muted,
+                    ),
+                  ],
+                ),
+                SizedBox(height: context.s(14)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FigText(
+                        project.phaseLabel,
+                        style: AppText.caption,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                    if (progress != null)
+                      FigText(
+                        '$progress%',
+                        style: AppText.caption.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: context.s(6)),
+                RakProgressBar(value: progress == null ? 0 : progress / 100),
+                SizedBox(height: context.s(8)),
+                FigText(
+                  handover == null
+                      ? 'Handover date not yet confirmed'
+                      : 'Est. handover · ${DateFormatter.displayShort(handover)}',
+                  style: AppText.caption,
+                  color: AppColors.muted,
+                ),
+              ],
+            ),
+          ),
         ),
-        SizedBox(height: context.s(8)),
-        RakProgressBar(value: progress == null ? 0 : progress / 100),
-        SizedBox(height: context.s(8)),
-        FigText(
-          handover == null
-              ? 'Handover date not yet available'
-              : 'Expected handover · ${DateFormatter.displayShort(handover)}',
-          style: AppText.caption,
-        ),
-        SizedBox(height: context.s(8)),
+
+        SizedBox(height: context.s(AppSpacing.lg)),
+
+        // ── Quick links ───────────────────────────────────────────────────
         const Divider(height: 1, color: AppColors.line),
         _QuietLink(
           icon: CupertinoIcons.doc_text,
-          title: 'A review is waiting',
+          title: 'Review waiting',
           detail: '1 quotation · 1 design',
           onTap: () => context.push(
             '/projects/${project.id}/review',
@@ -202,8 +293,8 @@ class _ProjectHome extends StatelessWidget {
         const Divider(height: 1, color: AppColors.line),
         _QuietLink(
           icon: CupertinoIcons.photo,
-          title: 'Your kitchen is taking shape',
-          detail: 'New site update · Today, 10:30 AM',
+          title: 'Latest site update',
+          detail: 'Your kitchen is taking shape',
           onTap: () => context.push(
             '/projects/${project.id}/updates',
             extra: '/projects/overview',
@@ -211,8 +302,15 @@ class _ProjectHome extends StatelessWidget {
         ),
         const Divider(height: 1, color: AppColors.line),
         _QuietLink(
+          icon: CupertinoIcons.bag,
+          title: 'Shop furniture',
+          detail: 'Pieces for your space',
+          onTap: () => context.go('/shop'),
+        ),
+        const Divider(height: 1, color: AppColors.line),
+        _QuietLink(
           icon: CupertinoIcons.lightbulb,
-          title: 'Ideas for your next space',
+          title: 'Ideas & inspiration',
           detail: 'Projects, finishes and materials',
           onTap: () => context.push('/sales-kit'),
         ),
@@ -220,6 +318,8 @@ class _ProjectHome extends StatelessWidget {
     );
   }
 }
+
+// ─── Shared widgets ──────────────────────────────────────────────────────────
 
 class _QuietLink extends StatelessWidget {
   const _QuietLink({
@@ -239,7 +339,7 @@ class _QuietLink extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: context.s(16)),
+        padding: EdgeInsets.symmetric(vertical: context.s(14)),
         child: Row(
           children: [
             Icon(icon, size: context.s(18), color: AppColors.ink),
@@ -275,15 +375,15 @@ class _SalesKitPromo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FigText('Ideas for your next space', style: AppText.screenTitle),
-        SizedBox(height: context.s(8)),
+        SizedBox(height: context.s(6)),
         FigText(
           'Explore our projects, finishes and materials.',
-          style: AppText.bodyLarge,
+          style: AppText.body,
           color: AppColors.muted,
         ),
-        SizedBox(height: context.s(8)),
+        SizedBox(height: context.s(AppSpacing.sm)),
         RakButton(
-          label: 'Explore the sales kit',
+          label: 'Explore finishes & materials',
           style: RakButtonStyle.secondary,
           onPressed: () => context.push('/sales-kit'),
         ),

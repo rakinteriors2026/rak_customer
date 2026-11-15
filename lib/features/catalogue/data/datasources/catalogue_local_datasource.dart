@@ -45,5 +45,9 @@ class CatalogueLocalDatasource {
     currency: row.currency,
     specs: row.specs,
     imageHint: row.imageHint,
+    imageUrls: row.imageUrls,
+    modelGlbUrl: row.modelGlbUrl,
+    modelUsdzUrl: row.modelUsdzUrl,
+    spinFrameUrls: row.spinFrameUrls,
   );
 }

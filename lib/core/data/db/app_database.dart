@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:rak_customer/core/data/db/converters.dart';
 import 'package:rak_customer/core/data/db/seed.dart';
 import 'package:rak_customer/core/data/db/tables.dart';
 
@@ -47,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   );
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -78,6 +79,12 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(shopOrders);
         await m.createTable(shopOrderItems);
         await m.createTable(productEnquiries);
+      }
+      if (from < 6) {
+        await m.addColumn(products, products.imageUrls);
+        await m.addColumn(products, products.modelGlbUrl);
+        await m.addColumn(products, products.modelUsdzUrl);
+        await m.addColumn(products, products.spinFrameUrls);
       }
     },
   );

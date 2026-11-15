@@ -19,6 +19,10 @@ class AppShell extends StatelessWidget {
         path.contains('/products/') ||
         path.contains('/visualise') ||
         path.startsWith('/sales-kit') ||
+        path.startsWith('/showcase/') ||
+        path.startsWith('/cart') ||
+        path.startsWith('/orders/') ||
+        path.startsWith('/login') ||
         path.contains('/review');
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -34,9 +38,9 @@ class AppShell extends StatelessWidget {
                 minimum: EdgeInsets.only(bottom: context.s(6)),
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
-                    context.s(8),
-                    context.s(14),
-                    context.s(8),
+                    context.s(6),
+                    context.s(12),
+                    context.s(6),
                     0,
                   ),
                   child: Row(
@@ -49,23 +53,23 @@ class AppShell extends StatelessWidget {
                         onTap: () => navigationShell.goBranch(0),
                       ),
                       _Tab(
-                        label: 'Shop',
-                        icon: CupertinoIcons.bag,
-                        selectedIcon: CupertinoIcons.bag_fill,
+                        label: 'Inspiration',
+                        icon: CupertinoIcons.photo,
+                        selectedIcon: CupertinoIcons.photo_fill,
                         selected: navigationShell.currentIndex == 1,
                         onTap: () => navigationShell.goBranch(1),
                       ),
                       _Tab(
-                        label: 'Cart',
-                        icon: CupertinoIcons.cart,
-                        selectedIcon: CupertinoIcons.cart_fill,
+                        label: 'Projects',
+                        icon: CupertinoIcons.square_grid_2x2,
+                        selectedIcon: CupertinoIcons.square_grid_2x2_fill,
                         selected: navigationShell.currentIndex == 2,
                         onTap: () => navigationShell.goBranch(2),
                       ),
                       _Tab(
-                        label: 'Orders',
-                        icon: CupertinoIcons.cube_box,
-                        selectedIcon: CupertinoIcons.cube_box_fill,
+                        label: 'Shop',
+                        icon: CupertinoIcons.bag,
+                        selectedIcon: CupertinoIcons.bag_fill,
                         selected: navigationShell.currentIndex == 3,
                         onTap: () => navigationShell.goBranch(3),
                       ),

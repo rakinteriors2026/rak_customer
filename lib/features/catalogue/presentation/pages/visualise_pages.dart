@@ -12,6 +12,7 @@ import 'package:rak_customer/shared/widgets/fig_text.dart';
 import 'package:rak_customer/shared/widgets/rak_button.dart';
 import 'package:rak_customer/shared/widgets/rak_info_card.dart';
 import 'package:rak_customer/shared/widgets/rak_page.dart';
+import 'package:rak_customer/shared/widgets/product_artwork.dart';
 import 'package:rak_customer/shared/widgets/rak_photo.dart';
 import 'package:rak_customer/shared/widgets/rak_progress_bar.dart';
 
@@ -22,6 +23,9 @@ class VisualiseHubPage extends StatelessWidget {
     required this.productName,
     this.imageHint = 'chair',
     this.specs,
+    this.imageUrl,
+    this.hasModel = false,
+    this.hasSpin = false,
   });
 
   final String productId;
@@ -29,67 +33,109 @@ class VisualiseHubPage extends StatelessWidget {
   final String imageHint;
   final String? specs;
 
+  /// Real product image used for the hero (falls back to the hint artwork).
+  final String? imageUrl;
+
+  /// Whether this product ships a 3D model (enables the AR experience).
+  final bool hasModel;
+
+  /// Whether this product ships 360° spin frames (enables the 360° view).
+  final bool hasSpin;
+
   String get _base => '/shop/products/$productId/visualise';
 
   @override
   Widget build(BuildContext context) {
+    // Only offer experiences that are actually backed by product media.
+    final experiences = <Widget>[
+      if (hasSpin)
+        _ExperienceButton(
+          icon: 'assets/icons/visualise_360.svg',
+          label: '360° product view',
+          primary: false,
+          onPressed: () => context.push(
+            '/shop/products/$productId/360',
+            extra: productName,
+          ),
+        ),
+      _ExperienceButton(
+        icon: 'assets/icons/visualise_ai.svg',
+        label: 'Create an AI room concept',
+        primary: true,
+        onPressed: () => context.push('$_base/ai/photo', extra: productName),
+      ),
+      if (hasModel)
+        _ExperienceButton(
+          icon: 'assets/icons/visualise_ar.svg',
+          label: 'Place it in my room · AR',
+          primary: false,
+          onPressed: () => context.push(
+            '/shop/products/$productId/ar?hint=$imageHint&specs=${Uri.encodeComponent(specs ?? '')}',
+            extra: productName,
+          ),
+        ),
+    ];
+
     return RakPage(
       title: 'Make room for it',
-      subtitle: '$productName · Natural oak',
+      subtitle: productName,
       onBack: () => context.pop(),
       bottomBar: _CaptionBar(
         label: 'Back to product',
-        caption: 'Explore options · Illustrative previews',
+        caption: 'Explore options',
         style: RakButtonStyle.secondary,
         onPressed: () => context.pop(),
       ),
       child: ListView(
         padding: context.figPagePadding,
         children: [
-          RakPhoto(
-            asset: 'assets/photos/visualise_product.png',
-            height: 198,
-            radius: AppRadii.card,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(context.s(AppRadii.card)),
+            child: ColoredBox(
+              color: AppColors.sand,
+              child: SizedBox(
+                height: context.s(198),
+                width: double.infinity,
+                child: ProductArtwork(
+                  imageHint: imageHint,
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           FigText('Picture the possibilities.', style: AppText.title),
           const SizedBox(height: AppSpacing.sm),
           FigText(
-            'Explore every angle, create a room concept, or check the placement in your space.',
+            _blurb,
             style: AppText.body,
             color: AppColors.muted,
           ),
           const SizedBox(height: AppSpacing.md),
-          _ExperienceButton(
-            icon: 'assets/icons/visualise_360.svg',
-            label: '360° product view',
-            primary: false,
-            onPressed: () => context.push(
-              '/shop/products/$productId/360',
-              extra: productName,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _ExperienceButton(
-            icon: 'assets/icons/visualise_ai.svg',
-            label: 'Create an AI room concept',
-            primary: true,
-            onPressed: () =>
-                context.push('$_base/ai/photo', extra: productName),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _ExperienceButton(
-            icon: 'assets/icons/visualise_ar.svg',
-            label: 'Place it in my room · AR',
-            primary: false,
-            onPressed: () => context.push(
-              '/shop/products/$productId/ar?hint=$imageHint&specs=${Uri.encodeComponent(specs ?? '')}',
-              extra: productName,
-            ),
-          ),
+          for (var i = 0; i < experiences.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.sm),
+            experiences[i],
+          ],
         ],
       ),
     );
+  }
+
+  String get _blurb {
+    if (hasSpin && hasModel) {
+      return 'Explore every angle, create a room concept, or check the '
+          'placement in your space.';
+    }
+    if (hasModel) {
+      return 'Create a room concept, or check how it looks placed in your '
+          'space.';
+    }
+    if (hasSpin) {
+      return 'Explore every angle or create a room concept from a photo of '
+          'your space.';
+    }
+    return 'Create a room concept from a photo of your space.';
   }
 }
 

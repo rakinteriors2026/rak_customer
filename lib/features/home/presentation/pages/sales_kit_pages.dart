@@ -27,8 +27,8 @@ class SalesKitPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RakPage(
-      title: 'The RAK sales kit',
-      subtitle: 'Featured work',
+      title: 'Materials & Finishes',
+      subtitle: 'Catalogue & samples',
       onBack: () => context.pop(),
       child: ListView(
         padding: context.figPagePadding,

@@ -162,6 +162,11 @@ class SeedData {
             priceMinor: const Value(1850000),
             specs: 'W 220cm · D 100cm · H 76cm',
             imageHint: 'table',
+            imageUrls: const Value([
+              'assets/showcase/piece_oak_table.jpg',
+              'assets/showcase/showcase_hillview_dining.jpg',
+            ]),
+            modelGlbUrl: const Value('assets/models/table.glb'),
             sortCursor: 'p1',
           ),
           ProductsCompanion.insert(
@@ -174,6 +179,11 @@ class SeedData {
             priceMinor: const Value(920000),
             specs: 'W 230cm · D 98cm · H 82cm',
             imageHint: 'sofa',
+            imageUrls: const Value([
+              'assets/showcase/piece_linen_sofa.jpg',
+              'assets/showcase/show_minimal_room.jpg',
+            ]),
+            modelGlbUrl: const Value('assets/models/sofa.glb'),
             sortCursor: 'p2',
           ),
           ProductsCompanion.insert(
@@ -186,6 +196,11 @@ class SeedData {
             priceMinor: const Value(240000),
             specs: 'Diameter 42cm · drop 150cm max',
             imageHint: 'light',
+            imageUrls: const Value([
+              'assets/showcase/piece_brass_pendant.jpg',
+              'assets/showcase/show_japandi_room.jpg',
+            ]),
+            modelGlbUrl: const Value('assets/models/lamp.glb'),
             sortCursor: 'p3',
           ),
           ProductsCompanion.insert(
@@ -197,6 +212,11 @@ class SeedData {
             salesMode: 'quotation_only',
             specs: 'Custom width · oak or painted finish',
             imageHint: 'wardrobe',
+            imageUrls: const Value([
+              'assets/showcase/piece_wardrobe.jpg',
+              'assets/showcase/showcase_backwater_bedroom.jpg',
+            ]),
+            modelGlbUrl: const Value('assets/models/wardrobe.glb'),
             sortCursor: 'p4',
           ),
           ProductsCompanion.insert(
@@ -208,6 +228,11 @@ class SeedData {
             priceMinor: const Value(560000),
             specs: '240 × 170cm',
             imageHint: 'rug',
+            imageUrls: const Value([
+              'assets/showcase/piece_wool_rug.jpg',
+              'assets/showcase/show_courtyard_room.jpg',
+            ]),
+            modelGlbUrl: const Value('assets/models/rug.glb'),
             sortCursor: 'p5',
           ),
         ]);

@@ -133,14 +133,13 @@ void main() {
 
     expect(find.text('My projects'), findsOneWidget);
     expect(find.text('Panampilly Nagar villa'), findsOneWidget);
-    expect(find.text('Cart'), findsNothing);
-    expect(find.text('Orders'), findsNothing);
+    expect(find.text('Inspiration'), findsNothing);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
     expect(find.text('Your project'), findsWidgets);
-    expect(find.text('Cart'), findsOneWidget);
+    expect(find.text('Inspiration'), findsOneWidget);
     await releaseApp(tester);
   });
 

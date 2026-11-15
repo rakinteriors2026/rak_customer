@@ -43,6 +43,13 @@ class AccountPage extends StatelessWidget {
                 ),
                 const Divider(height: 1, color: AppColors.line),
                 _QuietLink(
+                  icon: CupertinoIcons.cube_box,
+                  title: 'Orders',
+                  detail: 'Track furniture deliveries',
+                  onTap: () => context.push('/orders'),
+                ),
+                const Divider(height: 1, color: AppColors.line),
+                _QuietLink(
                   icon: CupertinoIcons.chat_bubble,
                   title: 'Project support',
                   detail: 'Questions for your consultant',
@@ -123,6 +130,13 @@ class AccountPage extends StatelessWidget {
                 title: 'Quote enquiries',
                 detail: 'Requests that are not orders',
                 onTap: () => context.push('/enquiries'),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              _QuietLink(
+                icon: CupertinoIcons.cube_box,
+                title: 'Your orders',
+                detail: 'Track furniture and decor orders',
+                onTap: () => context.push('/orders'),
               ),
               const Divider(height: 1, color: AppColors.line),
               _QuietLink(

@@ -176,7 +176,10 @@ class _LoadedDetail extends StatelessWidget {
           child: ListView(
             padding: context.figPagePadding,
             children: [
-              _ProductPhoto(imageHint: product.imageHint),
+              _ProductGallery(
+                imageHint: product.imageHint,
+                imageUrls: product.imageUrls,
+              ),
               SizedBox(height: context.s(20)),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -206,22 +209,29 @@ class _LoadedDetail extends StatelessWidget {
                 child: FigText(lead, style: AppText.caption),
               ),
               const Divider(height: 1, color: AppColors.line),
-              _QuietLink(
-                icon: CupertinoIcons.viewfinder,
-                title: 'View in your room',
-                detail: 'Place it, then walk around to see every side',
-                onTap: () => context.push(
-                  '/shop/products/${product.id}/ar?hint=${product.imageHint}&specs=${Uri.encodeComponent(product.specs)}',
-                  extra: product.name,
+              if (product.hasModel) ...[
+                _QuietLink(
+                  icon: CupertinoIcons.viewfinder,
+                  title: 'View in your room',
+                  detail: 'Place it, then walk around to see every side',
+                  onTap: () => context.push(
+                    '/shop/products/${product.id}/ar?hint=${product.imageHint}&specs=${Uri.encodeComponent(product.specs)}',
+                    extra: product.name,
+                  ),
                 ),
-              ),
-              const Divider(height: 1, color: AppColors.line),
+                const Divider(height: 1, color: AppColors.line),
+              ],
               _QuietLink(
                 icon: CupertinoIcons.cube,
                 title: 'Visualise',
-                detail: '360°, AI room and AR',
+                detail: _visualiseDetail(product),
                 onTap: () => context.push(
-                  '/shop/products/${product.id}/visualise?hint=${product.imageHint}&specs=${Uri.encodeComponent(product.specs)}',
+                  '/shop/products/${product.id}/visualise'
+                  '?hint=${product.imageHint}'
+                  '&specs=${Uri.encodeComponent(product.specs)}'
+                  '&img=${Uri.encodeComponent(product.primaryImageUrl ?? '')}'
+                  '&model=${product.hasModel}'
+                  '&spin=${product.hasSpin}',
                   extra: product.name,
                 ),
               ),
@@ -288,14 +298,40 @@ class _LoadedDetail extends StatelessWidget {
   }
 }
 
-class _ProductPhoto extends StatelessWidget {
-  const _ProductPhoto({required this.imageHint});
+String _visualiseDetail(CatalogueProduct product) {
+  if (product.hasSpin && product.hasModel) return '360°, AI room and AR';
+  if (product.hasModel) return 'AI room and AR';
+  if (product.hasSpin) return '360° and AI room';
+  return 'AI room concept';
+}
+
+class _ProductGallery extends StatefulWidget {
+  const _ProductGallery({required this.imageHint, required this.imageUrls});
 
   final String imageHint;
+  final List<String> imageUrls;
+
+  @override
+  State<_ProductGallery> createState() => _ProductGalleryState();
+}
+
+class _ProductGalleryState extends State<_ProductGallery> {
+  final _controller = PageController();
+  int _index = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final asset = ProductArtwork.assetFor(imageHint);
+    // Fall back to the legacy hint when no real media is available so
+    // quote-only / unmediaed products still render a single image.
+    final sources = widget.imageUrls.isEmpty ? <String?>[null] : widget.imageUrls;
+    final hasMultiple = sources.length > 1;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(context.s(12)),
       child: ColoredBox(
@@ -303,17 +339,58 @@ class _ProductPhoto extends StatelessWidget {
         child: SizedBox(
           height: context.s(280),
           width: double.infinity,
-          child: Padding(
-            padding: EdgeInsets.all(context.s(28)),
-            child: Image.asset(
-              asset,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
-            ),
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _controller,
+                itemCount: sources.length,
+                onPageChanged: (value) => setState(() => _index = value),
+                itemBuilder: (context, i) => ProductArtwork(
+                  imageHint: widget.imageHint,
+                  imageUrl: sources[i],
+                  fit: BoxFit.cover,
+                ),
+              ),
+              if (hasMultiple)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: context.s(10),
+                  child: _GalleryDots(count: sources.length, index: _index),
+                ),
+            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _GalleryDots extends StatelessWidget {
+  const _GalleryDots({required this.count, required this.index});
+
+  final int count;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(count, (i) {
+        final active = i == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: EdgeInsets.symmetric(horizontal: context.s(3)),
+          width: context.s(active ? 18 : 6),
+          height: context.s(6),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.brass
+                : AppColors.white.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(context.s(3)),
+          ),
+        );
+      }),
     );
   }
 }

@@ -71,23 +71,23 @@ void main() {
   test('artwork assets differ by product image hint', () {
     expect(
       ProductArtwork.assetFor('table'),
-      'assets/products/linen_lounge_chair.png',
+      'assets/showcase/piece_oak_table.jpg',
     );
     expect(
       ProductArtwork.assetFor('sofa'),
-      'assets/products/oak_accent_chair.png',
+      'assets/showcase/piece_linen_sofa.jpg',
     );
     expect(
       ProductArtwork.assetFor('light'),
-      'assets/products/sage_lounge_chair.png',
+      'assets/showcase/piece_brass_pendant.jpg',
     );
     expect(
       ProductArtwork.assetFor('wardrobe'),
-      'assets/products/studio_armchair.png',
+      'assets/showcase/piece_wardrobe.jpg',
     );
     expect(
       ProductArtwork.assetFor('rug'),
-      'assets/products/linen_lounge_chair.png',
+      'assets/showcase/piece_wool_rug.jpg',
     );
     expect(ProductArtwork.assetFor('unknown'), ProductArtwork.placeholderAsset);
     expect(

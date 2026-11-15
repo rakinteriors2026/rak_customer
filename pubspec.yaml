@@ -85,6 +85,8 @@ flutter:
     - assets/branding/
     - assets/products/
     - assets/photos/
+    - assets/showcase/
+    - assets/services/
     - assets/models/
 
   fonts:
